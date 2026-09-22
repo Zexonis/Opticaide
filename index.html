@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Opticaide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#0B1016; --surface:#141C25; --surface-2:#1B2531; --line:#27323F; --line-2:#1F2A36;
+  --ink:#E8EEF4; --muted:#8FA1B3; --accent:#6D8BFF; --accent-ink:#0B1016; --accent-soft:#1B2540;
+  --ray:#FFB23F; --ray-soft:rgba(255,178,63,.16); --normal:#57C8F0; --ghost:#6B7C8D;
+  --glass:#7FB4E8; --ok:#35D08B; --bad:#FF5C7A; --gold:#E8B923;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#EEF2F6; --surface:#FFFFFF; --surface-2:#F3F6F9; --line:#D8E0E8; --line-2:#E7ECF1;
+    --ink:#101922; --muted:#5A6B7C; --accent:#3355D8; --accent-ink:#FFFFFF; --accent-soft:#E3E9FC;
+    --ray:#D97706; --ray-soft:rgba(217,119,6,.13); --normal:#0E7FA8; --ghost:#8899A8;
+    --glass:#3E7FC1; --ok:#12805A; --bad:#C81E43; --gold:#B07D00;
+    --shadow:0 1px 2px rgba(16,25,34,.06), 0 8px 24px rgba(16,25,34,.09);
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#EEF2F6; --surface:#FFFFFF; --surface-2:#F3F6F9; --line:#D8E0E8; --line-2:#E7ECF1;
+  --ink:#101922; --muted:#5A6B7C; --accent:#3355D8; --accent-ink:#FFFFFF; --accent-soft:#E3E9FC;
+  --ray:#D97706; --ray-soft:rgba(217,119,6,.13); --normal:#0E7FA8; --ghost:#8899A8;
+  --glass:#3E7FC1; --ok:#12805A; --bad:#C81E43; --gold:#B07D00;
+  --shadow:0 1px 2px rgba(16,25,34,.06), 0 8px 24px rgba(16,25,34,.09);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;
+  -webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3{margin:0;line-height:1.2;text-wrap:balance}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.eyebrow{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+
+/* ---------- shell ---------- */
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px;width:100%}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.topbar{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:11px 0}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand svg{width:26px;height:26px;flex:none}
+.brand b{font-size:1.06rem;letter-spacing:-.015em}
+.brand span{display:block;font-size:.68rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:7px 13px;font-size:.85rem;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.iconbtn{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--surface);
+  display:inline-flex;align-items:center;justify-content:center;color:var(--muted);flex:none}
+.iconbtn:hover{color:var(--ink)}
+.iconbtn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
+@media (max-width:640px){
+  .topbar{flex-wrap:wrap;gap:8px;padding-bottom:9px}
+  .brand{flex:1 1 auto}
+  .topbar>.row{flex:1 1 100%;order:3;gap:8px}
+  .seg{flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .seg button{padding:9px 2px;font-size:.78rem;text-align:center}
+}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* ---------- chips ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.chip{padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);
+  font-size:.79rem;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.chip i{width:7px;height:7px;border-radius:50%;background:currentColor;display:block;opacity:.85}
+
+/* ---------- drill card ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.drill{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:0;overflow:hidden}
+@media (max-width:820px){ .drill{grid-template-columns:1fr} }
+.pane-vis{background:var(--surface-2);border-right:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+@media (max-width:820px){ .pane-vis{border-right:0;border-bottom:1px solid var(--line)} }
+.pane-q{padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.scene{width:100%;height:auto;display:block;border-radius:10px;background:transparent}
+.scene text{font-family:"IBM Plex Mono",monospace;font-size:13px;fill:var(--ink)}
+.scene .lab-ray{fill:var(--ray)} .scene .lab-nor{fill:var(--normal)} .scene .lab-mut{fill:var(--muted);font-size:12px}
+.scene .lab-ok{fill:var(--ok)} .scene .lab-gh{fill:var(--ghost);font-size:12px}
+.scale-note{font-size:.74rem;color:var(--muted);text-align:center}
+.tag{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:3px 9px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);font-size:.72rem;font-weight:700;letter-spacing:.04em}
+.formula{background:var(--surface-2);border:1px dashed var(--line);border-radius:10px;padding:9px 12px;
+  font-size:.95rem;color:var(--ink);text-align:center}
+.prompt{font-size:1.06rem;font-weight:500}
+.prompt b{color:var(--ray)}
+.givens{display:flex;flex-wrap:wrap;gap:6px}
+.given{background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;padding:4px 9px;font-size:.85rem}
+.given b{color:var(--ink);font-weight:600}
+.fields{display:flex;flex-direction:column;gap:10px}
+.field{display:grid;grid-template-columns:minmax(74px,auto) minmax(0,1fr) auto;gap:9px;align-items:center}
+.field label{font-weight:600;font-size:.95rem}
+.field input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);
+  font-family:"IBM Plex Mono",monospace;font-size:1rem;text-align:right}
+.field .unit{color:var(--muted);font-size:.9rem;min-width:34px}
+.field.ok input{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 11%,var(--surface-2))}
+.field.bad input{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface-2))}
+.row{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 16px;border-radius:10px;
+  border:1px solid var(--line);background:var(--surface-2);font-weight:600;font-size:.92rem}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.verdict{border-radius:10px;padding:10px 13px;font-weight:600;font-size:.92rem;display:flex;gap:9px;align-items:flex-start}
+.verdict.ok{background:color-mix(in srgb,var(--ok) 14%,var(--surface));color:var(--ok)}
+.verdict.bad{background:color-mix(in srgb,var(--bad) 12%,var(--surface));color:var(--bad)}
+.verdict.hint{background:var(--surface-2);color:var(--muted);font-weight:500}
+.verdict svg{width:17px;height:17px;flex:none;margin-top:1px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.sol{border-top:1px solid var(--line-2);padding-top:12px;display:flex;flex-direction:column;gap:5px}
+.sol .step{font-family:"IBM Plex Mono",monospace;font-size:.86rem;color:var(--muted);line-height:1.65}
+.sol .step.key{color:var(--ink)}
+.sol .step.res{color:var(--ok);font-weight:600}
+.sol h4{margin:0 0 3px;font-size:.74rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+
+.chip.modpick{border-radius:10px;padding:7px 12px;font-size:.84rem}
+.chip.modpick b{font-weight:700;font-variant-numeric:tabular-nums;opacity:.65;margin-left:3px}
+.picker{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:16px;overflow:hidden}
+.picker>summary{list-style:none;cursor:pointer;padding:9px 13px;font-size:.84rem;font-weight:600;color:var(--muted);
+  display:flex;gap:8px;align-items:center}
+.picker>summary::-webkit-details-marker{display:none}
+.picker>summary::before{content:'▸';font-size:.8rem;transition:transform .15s}
+.picker[open]>summary::before{content:'▾'}
+.picker>summary em{font-style:normal;font-weight:500;margin-left:auto;font-size:.8rem}
+.pickbody{padding:2px 13px 12px;display:flex;flex-direction:column;gap:9px}
+.modgroup{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start}
+.modlab{font-size:.66rem;font-weight:700;letter-spacing:.06em;color:var(--muted);background:var(--surface-2);
+  border:1px solid var(--line-2);border-radius:6px;padding:4px 7px;margin-top:3px;white-space:nowrap}
+.modgroup .chips{margin:0}
+
+/* ---------- brouillon + encre ---------- */
+.figwrap{position:relative;border-radius:10px;overflow:hidden;touch-action:manipulation}
+.figwrap canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;
+  transition:background .15s}
+.figwrap.on canvas{pointer-events:auto;touch-action:none;background:rgba(8,12,17,.5);cursor:crosshair}
+.figwrap.inked canvas{background:rgba(8,12,17,.5)}
+.inkbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.inkbtn{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:8px 12px;border-radius:9px;
+  border:1px solid var(--line);background:var(--surface);font-size:.83rem;font-weight:600;color:var(--muted)}
+.inkbtn:hover{color:var(--ink)}
+.inkbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.inkbtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.inkbar .sep{flex:1}
+.work{display:flex;flex-direction:column;gap:6px}
+.work .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700}
+.work .hd em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:500;font-size:.78rem}
+.work textarea{width:100%;min-height:104px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface-2);color:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:16px;line-height:1.6;resize:vertical}
+.work textarea::placeholder{color:var(--muted);opacity:.8}
+/* 16px partout sur les champs : évite le zoom automatique de iOS au focus */
+.field input{font-size:16px}
+
+/* ---------- cahier ---------- */
+.hist{display:flex;flex-direction:column;gap:10px}
+.hitem{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.hitem>summary{list-style:none;padding:13px 15px;cursor:pointer;display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.hitem>summary::-webkit-details-marker{display:none}
+.hitem>summary::before{content:none}
+.hitem .dot2{width:9px;height:9px;border-radius:50%;flex:none}
+.hitem .dot2.ok{background:var(--ok)} .hitem .dot2.no{background:var(--bad)} .hitem .dot2.mid{background:var(--gold)}
+.hitem .ttl{min-width:0}
+.hitem .ttl b{display:block;font-size:.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hitem .ttl span{font-size:.76rem;color:var(--muted)}
+.hitem .badges{display:flex;gap:5px;flex:none}
+.hbadge{font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line-2)}
+.hbody{padding:0 15px 15px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:760px){ .hbody{grid-template-columns:1fr} }
+.hbody .pre{white-space:pre-wrap;font-family:"IBM Plex Mono",monospace;font-size:.84rem;background:var(--surface-2);
+  border-radius:9px;padding:10px 12px;color:var(--ink);line-height:1.6;overflow-wrap:anywhere}
+.hbody h5{margin:0 0 5px;font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.hrow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+
+/* ---------- streak bar ---------- */
+.statbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.pill{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:.82rem;display:flex;gap:7px;align-items:baseline}
+.pill b{font-size:1rem;font-variant-numeric:tabular-nums}
+.pill.hot b{color:var(--ray)}
+
+/* ---------- reference ---------- */
+.ref{display:grid;gap:14px}
+.refcard{padding:16px}
+.refcard h3{font-size:1rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
+.mod{font-size:.68rem;font-weight:700;letter-spacing:.05em;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line-2)}
+.eq{font-family:"IBM Plex Mono",monospace;font-size:1.06rem;background:var(--surface-2);border-radius:10px;
+  padding:12px 14px;margin:10px 0;text-align:center;border-left:3px solid var(--ray);overflow-x:auto}
+.syms{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 12px;font-size:.89rem;align-items:baseline}
+.syms dt{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--ray)}
+.syms dd{margin:0;color:var(--muted)}
+.warn{margin-top:10px;font-size:.84rem;color:var(--gold);background:color-mix(in srgb,var(--gold) 12%,transparent);
+  border-radius:8px;padding:8px 11px;border-left:3px solid var(--gold)}
+
+/* ---------- stats ---------- */
+.grid-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.grid-stats div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.grid-stats b{display:block;font-size:1.5rem;font-variant-numeric:tabular-nums;line-height:1.2}
+.grid-stats span{font-size:.78rem;color:var(--muted)}
+.strow{display:grid;grid-template-columns:minmax(0,1fr) 92px 58px;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line-2)}
+.strow:first-of-type{border-top:0}
+.strow .nm{font-weight:600;font-size:.92rem}
+.strow .nm small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+.bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;background:var(--ok)}
+.bar i.low{background:var(--bad)} .bar i.mid{background:var(--gold)}
+.pct{text-align:right;font-variant-numeric:tabular-nums;font-size:.86rem;color:var(--muted)}
+.empty{padding:26px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.fade{animation:fade .22s ease-out}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 4 L28 26 L4 26 Z" fill="none" stroke="var(--glass)" stroke-width="1.6" opacity=".85"/>
+      <path d="M2 18 H12" stroke="var(--ray)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M17.5 18 L30 12" stroke="var(--ray)" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div><b>Opticaide</b><span>Optique SCI 23546</span></div>
+  </div>
+  <div class="row" style="gap:8px">
+    <div class="seg" id="tabs"></div>
+    <button class="iconbtn" id="themeBtn" aria-label="Changer le thème (sombre / clair / système)" title="Thème : sombre">
+      <svg viewBox="0 0 24 24"><path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6.3 6.3 4.9 4.9M19.1 19.1l-1.4-1.4M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/><circle cx="12" cy="12" r="3.6"/></svg>
+    </button>
+  </div>
+</div></header>
+<main><div class="wrap" id="view"></div></main>
+
+<script>
+/* =======================================================================
+   MISE À JOUR AUTOMATIQUE
+   APP_VERSION : à incrémenter à chaque nouvelle version publiée.
+   UPDATE_URL  : l'adresse « Raw » du fichier de référence (Gist GitHub,
+                 GitHub Pages…). Doit renvoyer l'en-tête CORS
+                 Access-Control-Allow-Origin: *  — c'est le cas de
+                 gist.githubusercontent.com et raw.githubusercontent.com.
+                 Laisser vide désactive simplement le bouton.
+   ======================================================================= */
+const APP_VERSION = 7;
+const UPDATE_URL  = '';   // ← colle ici l'URL Raw de ton Gist
+
+/* Au démarrage : si une version plus récente a déjà été téléchargée et mise
+   en cache sur cet appareil, on la charge à la place du fichier local.
+   ?fresh=1 dans l'adresse force le fichier d'origine (sortie de secours). */
+(function bootUpdate(){
+  try{
+    if(location.search.includes('fresh=1')){ localStorage.removeItem('opticaide.app'); return; }
+    const cached = localStorage.getItem('opticaide.app');
+    if(!cached) return;
+    const m = cached.match(/const APP_VERSION\s*=\s*(\d+)/);
+    const okShape = cached.includes('<title>Opticaide</title>') && cached.includes('const DRILLS');
+    if(!m || !okShape || +m[1] <= APP_VERSION) return;
+    document.open(); document.write(cached); document.close();
+  }catch(e){ /* stockage indisponible : on garde la version du fichier */ }
+})();
+
+/* =======================================================================
+   Opticaide — entraînement aux équations d'optique (SCI 23546, modules 1–3)
+   Toutes les figures sont construites mathématiquement en SVG à partir des
+   valeurs du problème : aucune image importée.
+   ======================================================================= */
+const RAD = Math.PI/180, DEG = 180/Math.PI;
+const rad = d => d*RAD, deg = r => r*DEG;
+const sin = d => Math.sin(rad(d)), cos = d => Math.cos(rad(d)), tan = d => Math.tan(rad(d));
+const asin = x => deg(Math.asin(x)), atan = x => deg(Math.atan(x));
+const rnd = (a,b) => a + Math.random()*(b-a);
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const ri = (a,b) => Math.floor(rnd(a,b+1));
+const r2 = (x,k=2) => Math.round(x*10**k)/10**k;
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = (x,k=2) => { const v = r2(x,k); return Number.isInteger(v) ? String(v) : v.toFixed(k).replace(/0+$/,'').replace(/\.$/,''); };
+const fmtInt = x => Math.round(x).toLocaleString('fr-CA').replace(/ | /g,' ');
+
+// Matériaux ophtalmiques (prismes et lentilles)
+const MATS = [
+  {n:1.498, nom:'CR-39 (organique)'}, {n:1.523, nom:'verre minéral'},
+  {n:1.586, nom:'polycarbonate'}, {n:1.600, nom:'indice 1.60'}, {n:1.670, nom:'indice 1.67'},
+  {n:1.701, nom:'indice 1.70'}, {n:1.740, nom:'indice 1.74'}
+];
+// Tous les milieux vus en classe (eau et diamant viennent des exercices du prof)
+const MEDIA = [{n:1.333, nom:'eau'}, ...MATS, {n:2.417, nom:'diamant'}];
+const C_KMS = 300000;
+
+/* ===================== SVG helpers ===================== */
+const W = 440, H = 300;
+function svgWrap(inner){
+  return `<svg class="scene" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">
+  <defs>
+    <marker id="aRay" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--ray)"/></marker>
+    <marker id="aGh" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--ghost)"/></marker>
+    <marker id="aDim" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker>
+    <marker id="aArc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker>
+  </defs>${inner}</svg>`;
+}
+const P = (x,y) => `${r2(x,1)} ${r2(y,1)}`;
+function line(x1,y1,x2,y2,o={}){
+  return `<path d="M ${P(x1,y1)} L ${P(x2,y2)}" stroke="${o.stroke||'var(--ink)'}" stroke-width="${o.w||2}"
+    ${o.dash?`stroke-dasharray="${o.dash}"`:''} ${o.marker?`marker-end="url(#${o.marker})"`:''}
+    fill="none" stroke-linecap="round" ${o.op?`opacity="${o.op}"`:''}/>`;
+}
+function ray(x1,y1,x2,y2,o={}){ return line(x1,y1,x2,y2,{stroke:'var(--ray)',w:2.4,marker:'aRay',...o}); }
+function arcPath(cx,cy,r,a0,a1){
+  const x0=cx+r*cos(a0), y0=cy+r*sin(a0), x1=cx+r*cos(a1), y1=cy+r*sin(a1);
+  const large = Math.abs(a1-a0)>180?1:0, sweep = a1>a0?1:0;
+  return `M ${P(x0,y0)} A ${r2(r,1)} ${r2(r,1)} 0 ${large} ${sweep} ${P(x1,y1)}`;
+}
+function angleArc(cx,cy,r,a0,a1,label,cls='lab-mut'){
+  const am=(a0+a1)/2, lx=cx+(r+15)*cos(am), ly=cy+(r+15)*sin(am);
+  const arc = Math.abs(a1-a0) < 0.4 ? ''   // angle nul : pas d'arc à tracer, juste l'étiquette
+    : `<path d="${arcPath(cx,cy,r,a0,a1)}" stroke="var(--muted)" stroke-width="1.4" fill="none" opacity=".9"/>`;
+  return arc + `<text class="${cls}" x="${r2(lx,1)}" y="${r2(ly,1)}" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+}
+function txt(x,y,s,cls='',anchor='middle'){ return `<text class="${cls}" x="${r2(x,1)}" y="${r2(y,1)}" text-anchor="${anchor}">${s}</text>`; }
+function hatch(x1,x2,y,step=13,len=9){
+  let s='';
+  for(let x=x1;x<=x2;x+=step) s+=line(x,y,x-len*0.7,y+len,{stroke:'var(--line)',w:1.6});
+  return s;
+}
+function dimArrow(x1,y1,x2,y2,label){
+  return `<path d="M ${P(x1,y1)} L ${P(x2,y2)}" stroke="var(--muted)" stroke-width="1.4" fill="none"
+    marker-start="url(#aDim)" marker-end="url(#aDim)"/>` + txt((x1+x2)/2+(x1===x2?26:0), (y1+y2)/2+(y1===y2?-8:4), label, 'lab-mut');
+}
+const Q = '<tspan fill="var(--ray)" font-weight="600">?</tspan>';
+
+/* ===================== Scenes ===================== */
+function sceneReflection(o){
+  const px=220, py=215, L=150, ti=o.thetaI, tr=o.thetaR!=null?o.thetaR:ti;
+  const sx=px-L*sin(ti), sy=py-L*cos(ti), ex=px+L*sin(tr), ey=py-L*cos(tr);
+  let s='';
+  s+=line(40,py,400,py,{stroke:'var(--glass)',w:2.5});
+  s+=hatch(46,400,py);
+  s+=line(px,60,px,262,{stroke:'var(--normal)',w:1.6,dash:'5 5'});
+  s+=txt(px,52,'normale','lab-nor');
+  s+=ray(sx,sy,px,py);
+  s+=ray(px,py,ex,ey);
+  s+=angleArc(px,py,56,deg(Math.atan2(-cos(ti),-sin(ti))),-90,o.hideI?Q:fmt(ti)+'°');
+  s+=angleArc(px,py,56,-90,deg(Math.atan2(-cos(tr),sin(tr))),o.hideR?Q:fmt(tr)+'°');
+  s+=txt(sx-4,sy-8,'incident','lab-ray');
+  s+=txt(ex+6,ey-8,'réfléchi','lab-ray');
+  s+=txt(220,284,'surface réfléchissante','lab-gh');
+  return svgWrap(s);
+}
+function sceneRefraction(o){
+  const px=220, py=152, L=128, t1=o.theta1, t2=o.theta2;
+  const tint = Math.min(.30, .07*(o.n2-1)/0.4+.07);
+  let s='';
+  s+=`<rect x="20" y="30" width="400" height="${py-30}" fill="var(--glass)" opacity="${o.n1>1.05?tint*.6:.04}" rx="8"/>`;
+  s+=`<rect x="20" y="${py}" width="400" height="${268-py}" fill="var(--glass)" opacity="${tint}" rx="8"/>`;
+  s+=line(20,py,420,py,{stroke:'var(--glass)',w:2.2});
+  s+=line(px,38,px,262,{stroke:'var(--normal)',w:1.6,dash:'5 5'});
+  s+=txt(px,32,'normale','lab-nor');
+  s+=ray(px-L*sin(t1),py-L*cos(t1),px,py);
+  s+=ray(px,py,px+L*sin(t2),py+L*cos(t2));
+  s+=line(px,py,px+L*sin(t1),py+L*cos(t1),{stroke:'var(--ghost)',w:1.6,dash:'4 5',op:.75});
+  s+=angleArc(px,py,50,deg(Math.atan2(-cos(t1),-sin(t1))),-90,o.hide1?Q:fmt(t1)+'°');
+  s+=angleArc(px,py,64,90,deg(Math.atan2(cos(t2),sin(t2))),o.hide2?Q:fmt(t2)+'°');
+  s+=txt(44,54,(o.hideN1?Q:'n = '+fmt(o.n1,3)),'lab-mut','start');
+  s+=txt(44,py+24,(o.hideN2?Q:"n' = "+fmt(o.n2,3)),'lab-mut','start');
+  s+=txt(px+L*sin(t1)+6,py+L*cos(t1)+18,'non dévié','lab-gh','start');
+  return svgWrap(s);
+}
+function scenePrism(o){
+  // Angles are drawn exaggerated when the prism is thin (ophthalmic prisms are a few degrees),
+  // otherwise the wedge and its deviation would be invisible. Every LABEL shows the true value,
+  // and the exaggeration factor is printed on the figure.
+  const a=o.a, ip=o.iPrime, d=o.d;
+  const aDraw = a<18 ? 22 : Math.min(a,40);
+  const k = aDraw/a;
+  const dDraw = (d!=null) ? d*k : null;
+  const ax=150, ay=52, h=172, by=ay+h, cx=ax+h*tan(aDraw);
+  const yr=ay+0.60*h, ex=ax+(yr-ay)*tan(aDraw);
+  let s='';
+  s+=`<path d="M ${P(ax,ay)} L ${P(cx,by)} L ${P(ax,by)} Z" fill="var(--glass)" opacity=".17" stroke="var(--glass)" stroke-width="2" stroke-linejoin="round"/>`;
+  s+=ray(30,yr,ax,yr);
+  s+=line(ax,yr,ex,yr,{stroke:'var(--ray)',w:2.2,op:.85});
+  s+=line(ex-54*cos(aDraw),yr+54*sin(aDraw),ex+58*cos(aDraw),yr-58*sin(aDraw),{stroke:'var(--normal)',w:1.5,dash:'5 5'});
+  s+=txt(ex+58*cos(aDraw)+4,yr-58*sin(aDraw)-6,'normale','lab-nor','start');
+  if(dDraw!=null){
+    s+=line(ex,yr,ex+168,yr,{stroke:'var(--ghost)',w:1.5,dash:'4 5',op:.7});
+    s+=txt(ex+170,yr-8,'non dévié','lab-gh','end');
+    s+=ray(ex,yr,ex+165*cos(dDraw),yr+165*sin(dDraw));
+    s+=angleArc(ex,yr,112,0,dDraw,o.hideD?Q:'d = '+fmt(d)+'°','lab-ok');
+    s+=angleArc(ex,yr,46,-aDraw,dDraw,o.hideIp?Q:"i' = "+fmt(ip)+'°');
+  } else {
+    s+=line(ex,yr,ex+150,yr,{stroke:'var(--ghost)',w:1.5,dash:'4 5',op:.6});
+    s+=txt(ex+100,yr-12,'sortie ?','lab-gh');
+  }
+  s+=angleArc(ex,yr,28,180-aDraw,180,'i = a');
+  s+=angleArc(ax,ay,38,90-aDraw,90,o.hideA?Q:'a = '+fmt(a)+'°');
+  s+=txt(30,yr-12,'rayon ⊥','lab-ray','start');
+  s+=txt(ax+h*tan(aDraw)/2,by+19,'BASE','lab-gh');
+  s+=txt(ax,ay-12,'apex','lab-gh');
+  if(o.n!=null) s+=txt(ax+7,by-12,'n = '+fmt(o.n,3),'lab-mut','start');
+  s+=txt(220,292, k>1.15 ? 'angles exagérés ×'+fmt(k,1) : 'figure à l’échelle', 'lab-gh');
+  return svgWrap(s);
+}
+function sceneScreen(o){
+  // o: {d (deg, optional), distM, dispCm, hideDisp, hideDist, hideDelta, delta}
+  const px=108, py=140, sx=366, spanPx=sx-px;   // sx laisse la place à l'étiquette de déplacement à droite
+  const pxPerM = spanPx/o.distM, truePxPerCm = pxPerM/100;
+  const wantPx = 62;
+  let k = 1, drop = o.dispCm*truePxPerCm;
+  if(drop < 34){ k = wantPx/Math.max(drop,0.01); drop = wantPx; }
+  drop = Math.min(drop, 104);
+  const a = 9; // small prism glyph
+  let s='';
+  s+=`<path d="M ${P(px-26,py-30)} L ${P(px,py+34)} L ${P(px-26,py+34)} Z" fill="var(--glass)" opacity=".2" stroke="var(--glass)" stroke-width="1.8" stroke-linejoin="round"/>`;
+  s+=ray(24,py,px-26,py);
+  s+=line(px-26,py,px,py,{stroke:'var(--ray)',w:2,op:.85});
+  s+=line(sx,58,sx,246,{stroke:'var(--glass)',w:2.6});
+  s+=hatch(sx+2,sx+2,0);
+  s+=txt(sx+6,64,'écran','lab-gh','start');
+  s+=line(px,py,sx,py,{stroke:'var(--ghost)',w:1.5,dash:'4 5',op:.75});
+  s+=ray(px,py,sx,py+drop);
+  // cross (croix de référence) on the screen
+  s+=line(sx-13,py,sx+13,py,{stroke:'var(--ghost)',w:1.8});
+  s+=line(sx,py-13,sx,py+13,{stroke:'var(--ghost)',w:1.8});
+  s+=txt(sx-17,py-6,'croix','lab-gh','end');
+  s+=`<circle cx="${sx}" cy="${r2(py+drop,1)}" r="4.5" fill="var(--ray)"/>`;
+  s+=dimArrow(sx,py,sx,py+drop,o.hideDisp?Q:fmt(o.dispCm)+' cm');
+  s+=line(px,262,sx,262,{stroke:'var(--muted)',w:1.3});
+  s+=line(px,256,px,268,{stroke:'var(--muted)',w:1.3});
+  s+=line(sx,256,sx,268,{stroke:'var(--muted)',w:1.3});
+  s+=txt((px+sx)/2,278,o.hideDist?Q+' m':fmt(o.distM)+' m','lab-mut');
+  if(o.delta!=null) s+=txt(px+8,96,o.hideDelta?'Δ = '+Q:'Δ = '+fmt(o.delta)+'Δ','lab-ray','start');
+  if(o.d!=null) s+=txt(px+8,116,o.hideD?'d = '+Q:'d = '+fmt(o.d)+'°','lab-mut','start');
+  if(k>1.05) s+=txt(220,26,'échelle verticale exagérée ×'+fmt(k,1)+' pour la lisibilité','lab-gh');
+  return svgWrap(s);
+}
+function sceneChain(o){
+  // Deux dioptres successifs : milieu 1 → milieu 2 → milieu 3 (lame à faces parallèles si n3 === n1)
+  const px=196, y1=112, y2=196, L=112;
+  const p2x = px + (y2-y1)*tan(o.t2);
+  let s='';
+  s+=`<rect x="18" y="34" width="404" height="${y1-34}" rx="8" fill="var(--glass)" opacity="${o.n1>1.05?0.06+0.05*(o.n1-1):0.04}"/>`;
+  s+=`<rect x="18" y="${y1}" width="404" height="${y2-y1}" fill="var(--glass)" opacity="${0.08+0.09*(o.n2-1)}"/>`;
+  s+=`<rect x="18" y="${y2}" width="404" height="${266-y2}" rx="8" fill="var(--glass)" opacity="${0.08+0.09*(o.n3-1)}"/>`;
+  s+=line(18,y1,422,y1,{stroke:'var(--glass)',w:2.2});
+  s+=line(18,y2,422,y2,{stroke:'var(--glass)',w:2.2});
+  s+=line(px,42,px,y1+34,{stroke:'var(--normal)',w:1.5,dash:'5 5'});
+  s+=line(p2x,y2-34,p2x,258,{stroke:'var(--normal)',w:1.5,dash:'5 5'});
+  s+=ray(px-L*sin(o.t1),y1-L*cos(o.t1),px,y1);
+  s+=ray(px,y1,p2x,y2);
+  s+=ray(p2x,y2,p2x+70*sin(o.t3),y2+70*cos(o.t3));
+  s+=angleArc(px,y1,44,deg(Math.atan2(-cos(o.t1),-sin(o.t1))),-90,fmt(o.t1)+'°');
+  s+=angleArc(px,y1,56,90,deg(Math.atan2(cos(o.t2),sin(o.t2))),o.hide2?Q:fmt(o.t2)+'°');
+  s+=angleArc(p2x,y2,38,90,deg(Math.atan2(cos(o.t3),sin(o.t3))),o.hide3?Q:fmt(o.t3)+'°');
+  s+=txt(26,60,(o.lab1||'n')+' = '+fmt(o.n1,3),'lab-mut','start');
+  s+=txt(26,y1+26,(o.lab2||"n'")+' = '+(o.hideN2?Q:fmt(o.n2,3)),'lab-mut','start');
+  s+=txt(26,y2+26,(o.lab3||"n''")+' = '+(o.hideN3?Q:fmt(o.n3,3)),'lab-mut','start');
+  s+=txt(220,286,o.note||'','lab-gh');
+  return svgWrap(s);
+}
+function sceneIndex(o){
+  const x0=70, wFull=300, y=118;
+  const vFrac = o.v/C_KMS;
+  let s='';
+  s+=`<rect x="${x0}" y="${y+34}" width="${wFull}" height="86" rx="10" fill="var(--glass)" opacity="${0.10+0.16*(o.n-1)}" stroke="var(--glass)" stroke-width="1.8"/>`;
+  s+=txt(x0+wFull/2,y+18,'dans le vide (≈ air)','lab-mut');
+  s+=ray(x0,y,x0+wFull,y);
+  s+=txt(x0+wFull+6,y+5,'c','lab-ray','start');
+  s+=txt(x0+wFull/2,y-16,o.hideC?Q:fmtInt(C_KMS)+' km/s','lab-mut');
+  s+=txt(x0+wFull/2,y+56,'dans le milieu','lab-mut');
+  s+=ray(x0+12,y+82,x0+12+(wFull-24)*vFrac,y+82);
+  s+=txt(x0+wFull/2,y+108,o.hideV?'v = '+Q:'v = '+fmtInt(o.v)+' km/s','lab-mut');
+  s+=txt(x0+wFull/2,258,o.hideN?'n = '+Q:'n = '+fmt(o.n,3),'lab-ray');
+  s+=txt(220,282,'la lumière est ralentie par le milieu','lab-gh');
+  return svgWrap(s);
+}
+
+/* ===================== Drills ===================== */
+const DRILLS = [
+{ id:'reflect', mod:1, nom:'Loi de la réflexion', eq:'θi = θr', hint:"Les angles se mesurent toujours depuis la NORMALE, jamais depuis la surface.",
+  gen(){
+    const v = pick(['direct','surface','total']);
+    const ti = ri(15,65);
+    if(v==='surface'){
+      const ts = 90-ti;
+      return {prompt:`Un rayon frappe un miroir en faisant un angle de <b>${ts}°</b> avec la <b>surface</b>. Quel est l'angle de réflexion mesuré depuis la normale ?`,
+        scene:sceneReflection({thetaI:ti,thetaR:ti,hideR:true}),
+        givens:[`angle avec la surface = ${ts}°`],
+        fields:[{key:'tr',label:'θr',unit:'°',val:ti,tol:0.5}],
+        steps:[['θ depuis la normale = 90° − θ depuis la surface','key'],[`θi = 90° − ${ts}° = ${ti}°`],['Loi de la réflexion : θr = θi','key'],[`θr = ${ti}°`,'res']]};
+    }
+    if(v==='total'){
+      return {prompt:`Un rayon arrive sur un miroir avec un angle d'incidence de <b>${ti}°</b>. Quel est l'angle <b>total</b> entre le rayon incident et le rayon réfléchi ?`,
+        scene:sceneReflection({thetaI:ti,thetaR:ti}),
+        givens:[`θi = ${ti}°`],
+        fields:[{key:'tt',label:'angle total',unit:'°',val:2*ti,tol:0.5}],
+        steps:[['θr = θi (loi de la réflexion)','key'],['Les deux rayons sont de part et d\'autre de la normale','key'],[`total = θi + θr = 2 × ${ti}° = ${2*ti}°`,'res']]};
+    }
+    return {prompt:`Un rayon frappe un miroir avec un angle d'incidence de <b>${ti}°</b> par rapport à la normale. Quel est l'angle de réflexion ?`,
+      scene:sceneReflection({thetaI:ti,thetaR:ti,hideR:true}),
+      givens:[`θi = ${ti}°`],
+      fields:[{key:'tr',label:'θr',unit:'°',val:ti,tol:0.5}],
+      steps:[['Loi de la réflexion : θi = θr','key'],[`θr = ${ti}°`,'res']]};
+  }},
+
+{ id:'index', mod:2, nom:'Indice de réfraction', eq:'n = c / v', hint:"c = 300 000 km/s. n = c ÷ v ; v = c ÷ n. L'indice n'a pas d'unité et vaut toujours ≥ 1.",
+  gen(){
+    const m = pick(MEDIA);
+    if(Math.random()<0.5){
+      const v = Math.round(C_KMS/m.n);
+      return {prompt:`La vitesse de la lumière dans un milieu inconnu est de <b>${fmtInt(v)} km/s</b>. Quel est son indice de réfraction ?`,
+        scene:sceneIndex({n:m.n,v,hideN:true}),
+        givens:[`v = ${fmtInt(v)} km/s`,`c = ${fmtInt(C_KMS)} km/s`],
+        fields:[{key:'n',label:'n',unit:'',val:C_KMS/v,tol:0.01}],
+        steps:[['n = c / v','key'],[`n = ${fmtInt(C_KMS)} / ${fmtInt(v)}`],[`n = ${fmt(C_KMS/v,3)}`,'res'],[`(≈ ${m.nom})`]]};
+    }
+    const v = C_KMS/m.n;
+    return {prompt:`Un matériau a un indice de réfraction de <b>${fmt(m.n,3)}</b>. Quelle est la vitesse de la lumière dans ce matériau ?`,
+      scene:sceneIndex({n:m.n,v,hideV:true}),
+      givens:[`n = ${fmt(m.n,3)}`,`c = ${fmtInt(C_KMS)} km/s`],
+      fields:[{key:'v',label:'v',unit:'km/s',val:v,tol:Math.max(60,v*0.002)}],
+      steps:[['n = c / v  →  v = c / n','key'],[`v = ${fmtInt(C_KMS)} / ${fmt(m.n,3)}`],[`v = ${fmtInt(v)} km/s`,'res']]};
+  }},
+
+{ id:'snell', mod:2, nom:'Loi de Snell-Descartes', eq:"n sin(i) = n' sin(i')", hint:"Isole le sinus, puis utilise arcsin (sin⁻¹ / INV) — pas la cosécante. Vers un milieu plus dense → le rayon se rapproche de la normale.",
+  gen(){
+    const v = pick(['ip','i','n2','devie','perp']);
+    const dense = Math.random()<0.55;
+    const mat = pick(MEDIA);
+    const n1 = dense?1:mat.n, n2 = dense?mat.n:1;
+    let i1;
+    if(dense) i1 = ri(20,65);
+    else { const max = asin(Math.min(0.999, n2/n1)); i1 = r2(rnd(6, Math.min(max-4, 30)),0); }
+    const i2 = asin(n1*sin(i1)/n2);
+    if(v==='perp'){
+      const m2 = pick(MATS);
+      return {prompt:`Un rayon frappe <b>perpendiculairement</b> la surface plane d'un matériau d'indice <b>${fmt(m2.n,3)}</b>. Quel est l'angle de réfraction, et quelle est la vitesse de la lumière dans ce matériau ?`,
+        scene:sceneRefraction({n1:1,n2:m2.n,theta1:0,theta2:0,hide2:true}),
+        givens:[`n = 1`,`i = 0°`,`n' = ${fmt(m2.n,3)}`],
+        fields:[{key:'ip',label:"i'",unit:'°',val:0,tol:0.2},{key:'v',label:'v',unit:'km/s',val:C_KMS/m2.n,tol:Math.max(60,(C_KMS/m2.n)*0.002)}],
+        steps:[["n sin i = n' sin i'  avec i = 0°",'key'],['sin 0° = 0, donc sin i\' = 0'],
+          ["i' = 0° — un rayon perpendiculaire n'est pas dévié",'res'],
+          ['v = c / n','key'],[`v = ${fmtInt(C_KMS)} / ${fmt(m2.n,3)} = ${fmtInt(C_KMS/m2.n)} km/s`,'res']]};
+    }
+    if(v==='devie'){
+      const m2 = pick(MATS), ii = ri(18,50);
+      const ii2 = asin(sin(ii)/m2.n), delt = ii-ii2;
+      return {prompt:`Un rayon passe de l'air à un matériau inconnu. L'angle d'incidence est de <b>${ii}°</b> et le rayon réfracté a dévié de <b>${fmt(delt)}°</b> vers la normale. Quel est l'indice de réfraction du matériau ?`,
+        scene:sceneRefraction({n1:1,n2:m2.n,theta1:ii,theta2:ii2,hideN2:true}),
+        givens:[`n = 1`,`i = ${ii}°`,`déviation vers la normale = ${fmt(delt)}°`],
+        fields:[{key:'n2',label:"n'",unit:'',val:m2.n,tol:0.03}],
+        steps:[["« dévié vers la normale » : l'angle de réfraction est PLUS PETIT que l'angle d'incidence",'key'],
+          [`i' = i − déviation = ${ii}° − ${fmt(delt)}° = ${fmt(ii2)}°`],
+          ["n sin i = n' sin i'  →  n' = n sin i / sin i'",'key'],
+          [`n' = sin ${ii}° / sin ${fmt(ii2)}° = ${fmt(m2.n,3)}`,'res']]};
+    }
+    if(v==='i'){
+      return {prompt:`Un rayon passe d'un milieu d'indice <b>${fmt(n1,3)}</b> à un milieu d'indice <b>${fmt(n2,3)}</b>. L'angle de réfraction mesuré est de <b>${fmt(i2)}°</b>. Quel était l'angle d'incidence ?`,
+        scene:sceneRefraction({n1,n2,theta1:i1,theta2:i2,hide1:true}),
+        givens:[`n = ${fmt(n1,3)}`,`n' = ${fmt(n2,3)}`,`i' = ${fmt(i2)}°`],
+        fields:[{key:'i',label:'i',unit:'°',val:i1,tol:0.35}],
+        steps:[["n sin i = n' sin i'  →  sin i = n' sin i' / n",'key'],[`sin i = (${fmt(n2,3)} × sin ${fmt(i2)}°) / ${fmt(n1,3)}`],[`sin i = ${fmt(n2*sin(i2)/n1,5)}`],[`i = arcsin(${fmt(n2*sin(i2)/n1,5)}) = ${fmt(i1)}°`,'res']]};
+    }
+    if(v==='n2'){
+      return {prompt:`Un rayon quitte un milieu d'indice <b>${fmt(n1,3)}</b> avec un angle d'incidence de <b>${fmt(i1)}°</b> et se réfracte à <b>${fmt(i2)}°</b>. Quel est l'indice du second milieu ?`,
+        scene:sceneRefraction({n1,n2,theta1:i1,theta2:i2,hideN2:true}),
+        givens:[`n = ${fmt(n1,3)}`,`i = ${fmt(i1)}°`,`i' = ${fmt(i2)}°`],
+        fields:[{key:'n2',label:"n'",unit:'',val:n2,tol:0.02}],
+        steps:[["n sin i = n' sin i'  →  n' = n sin i / sin i'",'key'],[`n' = (${fmt(n1,3)} × sin ${fmt(i1)}°) / sin ${fmt(i2)}°`],[`n' = ${fmt(n1*sin(i1),5)} / ${fmt(sin(i2),5)}`],[`n' = ${fmt(n2,3)}`,'res']]};
+    }
+    return {prompt:`Un rayon passe d'un milieu d'indice <b>${fmt(n1,3)}</b> à un milieu d'indice <b>${fmt(n2,3)}</b> avec un angle d'incidence de <b>${fmt(i1)}°</b>. Quel est l'angle de réfraction ?`,
+      scene:sceneRefraction({n1,n2,theta1:i1,theta2:i2,hide2:true}),
+      givens:[`n = ${fmt(n1,3)}`,`i = ${fmt(i1)}°`,`n' = ${fmt(n2,3)}`],
+      fields:[{key:'ip',label:"i'",unit:'°',val:i2,tol:0.35}],
+      steps:[["n sin i = n' sin i'  →  sin i' = n sin i / n'",'key'],[`sin i' = (${fmt(n1,3)} × sin ${fmt(i1)}°) / ${fmt(n2,3)}`],[`sin i' = ${fmt(n1*sin(i1)/n2,5)}`],[`i' = arcsin(${fmt(n1*sin(i1)/n2,5)}) = ${fmt(i2)}°`,'res'],
+        [n1<n2?"(milieu plus dense : le rayon se rapproche de la normale)":"(milieu moins dense : le rayon s'écarte de la normale)"]]};
+  }},
+
+{ id:'chain', mod:2, nom:'Deux dioptres successifs', eq:"n sin(i) = n' sin(i')  appliquée deux fois",
+  hint:"Résous une interface à la fois. L'angle de réfraction de la 1re surface devient l'angle d'incidence de la 2e.",
+  gen(){
+    const a=pick([{n:1,nom:'air'},{n:1.333,nom:'eau'}]);
+    let b=pick(MEDIA.filter(m=>m.n>a.n+0.1));
+    let c=pick(MEDIA.filter(m=>m.n>b.n+0.1));
+    if(!c) c={n:2.417,nom:'diamant'};
+    const i1=ri(25,55), i2=asin(a.n*sin(i1)/b.n), i3=asin(b.n*sin(i2)/c.n);
+    return {prompt:`Un rayon passe de <b>${a.nom}</b> (n = ${fmt(a.n,3)}) à <b>${b.nom}</b> (n = ${fmt(b.n,3)}), puis au <b>${c.nom}</b> (n = ${fmt(c.n,3)}), avec un angle d'incidence de <b>${i1}°</b>. Calcule chaque angle réfracté.`,
+      scene:sceneChain({n1:a.n,n2:b.n,n3:c.n,t1:i1,t2:i2,t3:i3,hide2:true,hide3:true,note:`${a.nom} → ${b.nom} → ${c.nom}`}),
+      givens:[`${a.nom} n = ${fmt(a.n,3)}`,`${b.nom} n = ${fmt(b.n,3)}`,`${c.nom} n = ${fmt(c.n,3)}`,`i = ${i1}°`],
+      fields:[{key:'i2',label:"i' (1)",unit:'°',val:i2,tol:0.3},{key:'i3',label:"i' (2)",unit:'°',val:i3,tol:0.35}],
+      steps:[[`Étape 1 — ${a.nom} → ${b.nom}`,'key'],
+        [`${fmt(a.n,3)} × sin ${i1}° = ${fmt(b.n,3)} × sin i'`],
+        [`sin i' = ${fmt(a.n*sin(i1)/b.n,5)}  →  i' = ${fmt(i2)}°`,'res'],
+        [`Étape 2 — ${b.nom} → ${c.nom} : l'angle d'incidence est maintenant ${fmt(i2)}°`,'key'],
+        [`${fmt(b.n,3)} × sin ${fmt(i2)}° = ${fmt(c.n,3)} × sin i'`],
+        [`sin i' = ${fmt(b.n*sin(i2)/c.n,5)}  →  i' = ${fmt(i3)}°`,'res']]};
+  }},
+
+{ id:'plate', mod:2, nom:'Lame à faces parallèles', eq:"sortie = entrée  (déplacé, non dévié)",
+  hint:"Les deux surfaces sont parallèles : la 2e réfraction annule exactement la 1re. Le rayon ressort parallèle, seulement décalé.",
+  gen(){
+    const m=pick(MATS), i1=ri(20,55), i2=asin(sin(i1)/m.n);
+    return {prompt:`Un rayon passe de l'air dans une lame de verre à <b>faces parallèles</b> (n = ${fmt(m.n,3)}) avec un angle d'incidence de <b>${i1}°</b>, puis ressort dans l'air. Quel est l'angle à l'intérieur du verre, et quel est l'angle de sortie ?`,
+      scene:sceneChain({n1:1,n2:m.n,n3:1,t1:i1,t2:i2,t3:i1,hide2:true,hide3:true,lab3:"n''",note:'faces parallèles'}),
+      givens:[`n air = 1`,`n verre = ${fmt(m.n,3)}`,`i = ${i1}°`],
+      fields:[{key:'i2',label:'dans le verre',unit:'°',val:i2,tol:0.3},{key:'i3',label:'à la sortie',unit:'°',val:i1,tol:0.3}],
+      steps:[['Surface 1 — air → verre','key'],
+        [`sin i' = sin ${i1}° / ${fmt(m.n,3)} = ${fmt(sin(i1)/m.n,5)}  →  ${fmt(i2)}°`,'res'],
+        ['Surface 2 — verre → air, et les faces sont parallèles','key'],
+        [`${fmt(m.n,3)} × sin ${fmt(i2)}° = 1 × sin i''  →  i'' = ${fmt(i1)}°`,'res'],
+        ['Le rayon ressort au MÊME angle : il est déplacé latéralement, mais pas dévié.','key'],
+        ["Le décalage dépend de l'épaisseur de la lame."]]};
+  }},
+
+{ id:'prismSnell', mod:3, nom:'Prisme — méthode Snell', eq:"n sin(i) = n' sin(i')   avec   i = a   →   d = i' − a",
+  hint:"C'est la loi de Snell ordinaire. Le rayon entre ⊥ à la 1re face, donc il n'y est pas dévié ; à la 2e face l'angle d'incidence vaut l'angle apical a (côtés perpendiculaires). Remplace i par a.",
+  gen(){
+    const mat = pick(MATS.filter(m=>m.n>1.4));
+    const a = ri(8,26);          // au-delà de ~12° la méthode simplifiée décroche : Snell devient obligatoire
+    const ip = asin(mat.n*sin(a));
+    const d = ip-a;
+    return {prompt:`Un prisme d'indice <b>${fmt(mat.n,3)}</b> a un angle apical de <b>${a}°</b>. Un rayon frappe la première surface perpendiculairement. Trouve l'angle de réfraction à la sortie, puis la déviation.`,
+      scene:scenePrism({a,n:mat.n,iPrime:ip,d,hideIp:true,hideD:true}),
+      givens:[`n = ${fmt(mat.n,3)}`,`a = ${a}°`,`rayon ⊥ à la 1re face`],
+      fields:[{key:'ip',label:"i'",unit:'°',val:ip,tol:0.2},{key:'d',label:'d',unit:'°',val:d,tol:0.2}],
+      steps:[['1re surface : le rayon est ⊥, donc il entre sans être dévié','key'],
+        ["Le rayon est ⊥ à la face 1 ; la normale est ⊥ à la face 2 ; les deux faces forment l'angle a",'key'],
+        [`→ l'angle d'incidence à la 2e face vaut l'angle apical : i = a = ${a}°`,'key'],
+        [`n sin i = n' sin i'   (la loi de Snell, avec i = a)`],
+        [`${fmt(mat.n,3)} × sin ${a}° = 1 × sin i'`],
+        [`sin i' = ${fmt(mat.n*sin(a),5)}`],
+        [`i' = arcsin(${fmt(mat.n*sin(a),5)}) = ${fmt(ip)}°`,'res'],
+        ['déviation = angle de réfraction − angle apical','key'],
+        [`d = ${fmt(ip)}° − ${a}° = ${fmt(d)}°`,'res']]};
+  }},
+
+{ id:'thin', mod:3, nom:'Prisme mince  d = (n−1)a', eq:'d = (n − 1) a', hint:"(n − 1) est le contraste optique avec l'air ; a est l'angle apical. Valable seulement si a < 15°.",
+  gen(){
+    const mat = pick(MATS.filter(m=>m.n>1.4));
+    const a = r2(rnd(2,14),1), d = (mat.n-1)*a;
+    const v = pick(['d','n','a']);
+    if(v==='n'){
+      return {prompt:`Un prisme mince d'angle apical <b>${fmt(a)}°</b> produit une déviation de <b>${fmt(d)}°</b>. Quel est l'indice de réfraction du matériau ?`,
+        scene:scenePrism({a,iPrime:asin(mat.n*sin(a)),d,hideD:false}),
+        givens:[`a = ${fmt(a)}°`,`d = ${fmt(d)}°`],
+        fields:[{key:'n',label:'n',unit:'',val:mat.n,tol:0.02}],
+        steps:[['d = (n − 1) a  →  n = d / a + 1','key'],[`n = ${fmt(d)} / ${fmt(a)} + 1`],[`n = ${fmt(d/a,4)} + 1`],[`n = ${fmt(mat.n,3)}`,'res']]};
+    }
+    if(v==='a'){
+      return {prompt:`Un prisme fait d'un matériau d'indice <b>${fmt(mat.n,3)}</b> produit une déviation de <b>${fmt(d)}°</b>. Quel est son angle apical ?`,
+        scene:scenePrism({a,n:mat.n,iPrime:asin(mat.n*sin(a)),d,hideA:true}),
+        givens:[`n = ${fmt(mat.n,3)}`,`d = ${fmt(d)}°`],
+        fields:[{key:'a',label:'a',unit:'°',val:a,tol:0.15}],
+        steps:[['d = (n − 1) a  →  a = d / (n − 1)','key'],[`a = ${fmt(d)} / (${fmt(mat.n,3)} − 1)`],[`a = ${fmt(d)} / ${fmt(mat.n-1,3)}`],[`a = ${fmt(a)}°`,'res']]};
+    }
+    return {prompt:`Un prisme mince d'indice <b>${fmt(mat.n,3)}</b> a un angle apical de <b>${fmt(a)}°</b>. Calcule la déviation par la méthode simplifiée.`,
+      scene:scenePrism({a,n:mat.n,iPrime:asin(mat.n*sin(a)),d,hideD:true,hideIp:true}),
+      givens:[`n = ${fmt(mat.n,3)}`,`a = ${fmt(a)}°`],
+      fields:[{key:'d',label:'d',unit:'°',val:d,tol:0.1}],
+      steps:[['d = (n − 1) a','key'],[`d = (${fmt(mat.n,3)} − 1) × ${fmt(a)}`],[`d = ${fmt(mat.n-1,3)} × ${fmt(a)}`],[`d = ${fmt(d)}°`,'res'],
+        [`(a = ${fmt(a)}° < 15° : la méthode simplifiée est permise)`]]};
+  }},
+
+{ id:'delta', mod:3, nom:'Dioptrie de prisme', eq:'Δ = déplacement (cm) / distance (m)', hint:"1 Δ = 1 cm de déplacement mesuré à 1 m. Le déplacement est en CENTIMÈTRES, la distance en MÈTRES.",
+  gen(){
+    const dist = pick([0.5,1.5,2,2.5,3,4]);   // jamais 1 m : sinon le déplacement en cm égale Δ et la réponse se lit sur la figure
+    const delta = r2(rnd(1,9),1);
+    const disp = delta*dist;
+    const v = pick(['delta','disp','dist']);
+    if(v==='disp'){
+      return {prompt:`Un prisme de <b>${fmt(delta)}Δ</b> dévie un rayon. De combien le rayon sera-t-il déplacé sur un écran situé à <b>${fmt(dist)} m</b> ?`,
+        scene:sceneScreen({distM:dist,dispCm:disp,delta,hideDisp:true}),
+        givens:[`Δ = ${fmt(delta)}Δ`,`distance = ${fmt(dist)} m`],
+        fields:[{key:'disp',label:'déplacement',unit:'cm',val:disp,tol:0.06}],
+        steps:[['Δ = déplacement (cm) / distance (m)','key'],['→ déplacement = Δ × distance','key'],[`déplacement = ${fmt(delta)} × ${fmt(dist)}`],[`déplacement = ${fmt(disp)} cm`,'res']]};
+    }
+    if(v==='dist'){
+      return {prompt:`Un prisme de <b>${fmt(delta)}Δ</b> produit un déplacement de <b>${fmt(disp)} cm</b> sur un écran. À quelle distance se trouve l'écran ?`,
+        scene:sceneScreen({distM:dist,dispCm:disp,delta,hideDist:true}),
+        givens:[`Δ = ${fmt(delta)}Δ`,`déplacement = ${fmt(disp)} cm`],
+        fields:[{key:'dist',label:'distance',unit:'m',val:dist,tol:0.05}],
+        steps:[['Δ = déplacement / distance  →  distance = déplacement / Δ','key'],[`distance = ${fmt(disp)} / ${fmt(delta)}`],[`distance = ${fmt(dist)} m`,'res']]};
+    }
+    return {prompt:`Sur un écran placé à <b>${fmt(dist)} m</b>, un prisme déplace le rayon de <b>${fmt(disp)} cm</b> sous la croix de référence. Quelle est la puissance du prisme ?`,
+      scene:sceneScreen({distM:dist,dispCm:disp,delta,hideDelta:true}),
+      givens:[`déplacement = ${fmt(disp)} cm`,`distance = ${fmt(dist)} m`],
+      fields:[{key:'delta',label:'Δ',unit:'Δ',val:delta,tol:0.06}],
+      steps:[['Δ = déplacement (cm) / distance (m)','key'],[`Δ = ${fmt(disp)} / ${fmt(dist)}`],[`Δ = ${fmt(delta)}Δ`,'res'],['(1Δ = 1 cm à 1 m)']]};
+  }},
+
+{ id:'conv', mod:3, nom:'Conversion ° ↔ Δ', eq:'Δ = d° × 1.75   ·   d° = Δ × 0.57', hint:"1° = 1.75Δ et 1Δ = 0.57°. Ce sont des réciproques (1 ÷ 1.75 = 0.57). Valable pour les petits angles.",
+  gen(){
+    if(Math.random()<0.5){
+      const d = r2(rnd(0.8,9),2), delta = d*1.75;
+      return {prompt:`Un prisme dévie le rayon de <b>${fmt(d)}°</b>. Exprime sa puissance en dioptries de prisme (méthode approximative du cours).`,
+        scene:sceneScreen({distM:1,dispCm:delta,d,delta,hideDelta:true,hideDisp:true}),
+        givens:[`d = ${fmt(d)}°`,`1° = 1.75Δ`],
+        fields:[{key:'delta',label:'Δ',unit:'Δ',val:delta,tol:0.08}],
+        steps:[['Δ = d(°) × 1.75','key'],[`Δ = ${fmt(d)} × 1.75`],[`Δ = ${fmt(delta)}Δ`,'res']]};
+    }
+    const delta = r2(rnd(1,12),1), d = delta*0.57;
+    return {prompt:`Un prisme a une puissance de <b>${fmt(delta)}Δ</b>. Quelle est sa déviation en degrés (méthode approximative du cours) ?`,
+      scene:sceneScreen({distM:1,dispCm:delta,d,delta,hideD:true,hideDisp:true}),
+      givens:[`Δ = ${fmt(delta)}Δ`,`1Δ = 0.57°`],
+      fields:[{key:'d',label:'d',unit:'°',val:d,tol:0.08}],
+      steps:[['d(°) = Δ × 0.57','key'],[`d = ${fmt(delta)} × 0.57`],[`d = ${fmt(d)}°`,'res']]};
+  }},
+
+{ id:'exact', mod:3, nom:'Relation exacte  Δ = 100·tan(d)', eq:'Δ = 100 × tan(d)', hint:"La tangente relie le déplacement à la distance : tan(d) = déplacement / distance. Le ×100 convertit les mètres en centimètres.",
+  gen(){
+    if(Math.random()<0.55){
+      const d = r2(rnd(1,14),2), delta = 100*tan(d);
+      return {prompt:`Un prisme dévie le rayon de <b>${fmt(d)}°</b>. Calcule sa puissance avec la relation <b>exacte</b>.`,
+        scene:sceneScreen({distM:1,dispCm:delta,d,delta,hideDelta:true,hideDisp:true}),
+        givens:[`d = ${fmt(d)}°`],
+        fields:[{key:'delta',label:'Δ',unit:'Δ',val:delta,tol:0.08}],
+        steps:[['Δ = 100 × tan(d)','key'],[`Δ = 100 × tan(${fmt(d)}°)`],[`Δ = 100 × ${fmt(tan(d),5)}`],[`Δ = ${fmt(delta)}Δ`,'res'],
+          [`(approximation ×1.75 : ${fmt(d*1.75)}Δ — écart de ${fmt(Math.abs(delta-d*1.75))}Δ)`]]};
+    }
+    const delta = r2(rnd(1,20),1), d = atan(delta/100);
+    return {prompt:`Un prisme a une puissance de <b>${fmt(delta)}Δ</b>. Quelle est sa déviation en degrés, selon la relation <b>exacte</b> ?`,
+      scene:sceneScreen({distM:1,dispCm:delta,d,delta,hideD:true,hideDisp:true}),
+      givens:[`Δ = ${fmt(delta)}Δ`],
+      fields:[{key:'d',label:'d',unit:'°',val:d,tol:0.08}],
+      steps:[['Δ = 100 × tan(d)  →  tan(d) = Δ / 100','key'],[`tan(d) = ${fmt(delta)} / 100 = ${fmt(delta/100,4)}`],[`d = arctan(${fmt(delta/100,4)}) = ${fmt(d)}°`,'res'],
+        [`(approximation ×0.57 : ${fmt(delta*0.57)}° — écart de ${fmt(Math.abs(d-delta*0.57))}°)`]]};
+  }}
+];
+const DRILL_BY_ID = Object.fromEntries(DRILLS.map(d=>[d.id,d]));
+
+/* ===================== Reference sheet ===================== */
+const REF = [
+ {mod:1, nom:'Loi de la réflexion', eq:'θi = θr',
+  syms:[['θi',"angle d'incidence, mesuré depuis la normale"],['θr','angle de réflexion, mesuré depuis la normale']],
+  warn:"Piège classique : si l'énoncé donne l'angle avec la SURFACE, soustrais-le de 90° avant d'appliquer la loi."},
+ {mod:2, nom:'Indice de réfraction', eq:'n = c / v',
+  syms:[['n','indice de réfraction absolu du matériau (sans unité, ≥ 1)'],['c','vitesse de la lumière dans le vide = 300 000 km/s = 3.00 × 10⁸ m/s'],['v','vitesse de la lumière dans le milieu']],
+  warn:"n = 1.523 veut dire que la lumière voyage 1.523 fois plus lentement dans ce verre. Verre minéral 1.523 · organique (CR-39) 1.498."},
+ {mod:2, nom:'Loi de Snell-Descartes', eq:"n sin(i) = n' sin(i')      ⟺      n₁ sin(θ₁) = n₂ sin(θ₂)",
+  syms:[['n  (n₁)',"indice du milieu d'incidence — celui d'où vient le rayon"],['i  (θ₁)',"angle d'incidence, depuis la normale"],["n' (n₂)",'indice du milieu de réfraction — celui où le rayon entre'],["i' (θ₂)",'angle de réfraction, depuis la normale']],
+  warn:"Le prime (′) signifie toujours « après la surface ». Vers un milieu plus dense → le rayon se rapproche de la normale ; vers un milieu moins dense → il s'en écarte."},
+ {mod:2, nom:'Les 4 lois de Descartes', eq:'propagation rectiligne · coplanarité · θi = θr · loi des sinus',
+  syms:[['1','les rayons incident, réfléchi et transmis sont dans le même plan'],['2',"l'angle d'incidence = l'angle de réflexion"],['3',"loi des sinus de la réfraction : n sin(i) = n' sin(i')"],['+',"la lumière se propage en ligne droite (optique géométrique)"]],
+  warn:"La propagation rectiligne n'est vraie que si l'ouverture est grande ; avec une fente étroite, la diffraction apparaît."},
+ {mod:2, nom:'Table des indices de réfraction', eq:'vide 1.000 · air 1.0003 · eau 1.333 · CR-39 1.498 · verre minéral 1.523 · polycarbonate 1.586 · 1.60 · 1.67 · 1.74 · diamant 2.417',
+  syms:[['vide','n = 1.000 exactement — la lumière y atteint sa vitesse maximale'],['air',"n ≈ 1.0003, traité comme 1 dans tous les calculs du cours"],['eau','n = 1.333 (v = 225 000 km/s)'],['diamant','n = 2.417 — utilisé dans les exercices, pas un matériau ophtalmique']],
+  warn:"Plus l'indice est élevé, plus la lumière est ralentie et plus le rayon est dévié."},
+ {mod:2, nom:'Lame à faces parallèles', eq:"angle de sortie = angle d'entrée",
+  syms:[['déplacement','décalage latéral du rayon — proportionnel à l\'épaisseur de la lame'],['déviation','nulle : les deux réfractions s\'annulent']],
+  warn:"Déplacé ≠ dévié. C'est précisément pourquoi il faut incliner une surface (le prisme) pour vraiment dévier la lumière."},
+ {mod:3, nom:'Prisme — déviation par Snell', eq:"n sin(i) = n' sin(i')   avec   i = a       puis       d = i' − a",
+  syms:[['i',"angle d'incidence à la face de sortie — il ÉGALE l'angle apical a"],['a','angle apical (angle du sommet) du prisme'],["i'",'angle de réfraction à la surface de sortie'],['d','déviation totale, en degrés']],
+  warn:"Ce n'est pas une nouvelle formule : c'est n sin(i) = n' sin(i') où i a été remplacé par a. Pourquoi i = a ? Le rayon entre ⊥ à la 1re face, donc il n'y est pas dévié ; la normale de la 2e face est ⊥ à celle-ci ; comme les deux faces forment l'angle a, le rayon et cette normale forment aussi l'angle a (côtés perpendiculaires)."},
+ {mod:3, nom:'Prisme mince — méthode simplifiée', eq:'d = (n − 1) a',
+  syms:[['d','déviation, en degrés'],['n','indice de réfraction du prisme'],['a','angle apical, en degrés'],['(n − 1)',"le contraste optique avec l'air (n_air = 1)"]],
+  warn:"Seulement si a < 15°, ce qui couvre les lentilles ophtalmiques. L'approximation vient de sin θ ≈ θ. Si a = 0 (faces parallèles) alors d = 0 : une lame à faces planes déplace mais ne dévie pas."},
+ {mod:3, nom:'Dioptrie de prisme (Δ)', eq:'Δ = déplacement (cm) / distance (m)',
+  syms:[['Δ','puissance du prisme en dioptries de prisme'],['déplacement','décalage latéral du rayon, en centimètres'],['distance',"distance du prisme à l'écran, en mètres"]],
+  warn:"1Δ = 1 cm de déplacement à 1 m. Ne pas confondre avec la dioptrie de lentille (D = 1/f) — même mot, définition différente."},
+ {mod:3, nom:'Conversions ° ↔ Δ', eq:'Δ = d(°) × 1.75      ·      d(°) = Δ × 0.57',
+  syms:[['1° de déviation','= 1.75Δ'],['1Δ','= 0.57° de déviation']],
+  warn:"Approximation valable pour les petits angles (< 15°). Les deux facteurs sont réciproques : 1 ÷ 1.75 = 0.571."},
+ {mod:3, nom:'Relation trigonométrique exacte', eq:'tan(d) = Δ / 100      ⟹      Δ = 100 × tan(d)',
+  syms:[['d','angle de déviation, en degrés'],['Δ','puissance en dioptries de prisme'],['100','conversion mètre → centimètre']],
+  warn:"À 5° l'approximation et l'exact coïncident ; à 15° l'écart est de 2 % ; à 30° il atteint 9 %."},
+ {mod:4, nom:'Module 4 — Formation des images', eq:'aucune équation nouvelle annoncée au tableau chronologique',
+  syms:[["Qu'est-ce qu'une image ?",'notion à définir'],["Image virtuelle","à distinguer de l'image réelle"],
+    ["Formation des images dans l'œil","le trajet jusqu'à la rétine"],
+    ['Activité',"élaboration de diagrammes montrant l'influence d'une lentille anatomique sur les rayons"],
+    ['Lecture',"Yelle, Éléments d'optique géométrique et ophtalmiques, p. 1–7"],
+    ['NACOR',"2.1.1 voies visuelles · 2.1.2 système oculaire · 2.1.3 anatomie de l'œil · 2.2.2 optique géométrique"]],
+  warn:"Module du 29 septembre — pas encore donné. Le tableau ne liste AUCUNE formule pour ce module : il est conceptuel et graphique. Aucun exercice n'est donc généré ici pour l'instant ; dépose le diaporama après le cours et il sera ajouté s'il contient des calculs. ⚠ L'évaluation du module 5 demande « les différentes amétropies », alors que le tableau les enseigne au module 7 (UA2) : à vérifier avec le professeur."}
+];
+
+/* ===================== State ===================== */
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem('opticaide.'+k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
+  set(k,v){ try{ localStorage.setItem('opticaide.'+k, JSON.stringify(v)); }catch(e){} }
+};
+const state = {
+  tab: 'drill',
+  active: new Set(store.get('active', DRILLS.map(d=>d.id))),
+  stats: store.get('stats', {}),          // id -> {seen, first, tries}
+  streak: 0,
+  best: store.get('best', 0),
+  theme: store.get('theme','dark'),   // sombre par défaut : l'encre blanche et les rayons ressortent mieux
+  q: null, attempts: 0, solved: false, revealed: false,
+  work: {text:'', strokes:[]},       // brouillon de la question en cours
+  drawing: false, tool: 'pen',
+  pickOpen: store.get('pickOpen', false),
+  history: store.get('history', []), // questions passées + brouillons
+  openHist: null
+};
+const HIST_MAX = 30;
+function saveHistory(){
+  try{ store.set('history', state.history); }
+  catch(e){ state.history = state.history.slice(0, 10); try{ store.set('history', state.history); }catch(e2){} }
+}
+function upsertHistory(){
+  const q = state.q; if(!q) return;
+  const hasWork = (state.work.text||'').trim() || state.work.strokes.length;
+  if(!hasWork && !state.solved && !state.revealed) return;
+  const entry = {
+    id:q.qid, drill:q.drill.id, nom:q.drill.nom, eq:q.drill.eq, mod:q.drill.mod, ts:Date.now(),
+    prompt:q.prompt, givens:q.givens, scene:q.scene, steps:q.steps,
+    fields:q.fields.map(f=>({label:f.label, val:f.val, unit:f.unit})),
+    solved:state.solved, revealed:state.revealed, attempts:state.attempts,
+    work:{text:state.work.text, strokes:state.work.strokes}
+  };
+  const i = state.history.findIndex(h=>h.id===entry.id);
+  if(i>=0) state.history[i]=entry; else state.history.unshift(entry);
+  if(state.history.length>HIST_MAX) state.history.length = HIST_MAX;
+  saveHistory();
+}
+function applyTheme(){
+  const r=document.documentElement;
+  if(state.theme==='system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme',state.theme);
+}
+applyTheme();
+function statOf(id){ return state.stats[id] || {seen:0, first:0, tries:0}; }
+function bump(id, firstTry, tries){
+  const s = statOf(id);
+  state.stats[id] = {seen:s.seen+1, first:s.first+(firstTry?1:0), tries:s.tries+tries};
+  store.set('stats', state.stats);
+}
+
+/* ===================== Question flow ===================== */
+function newQuestion(){
+  const pool = DRILLS.filter(d=>state.active.has(d.id));
+  if(!pool.length){ state.q=null; return; }
+  // favour the drills with the weakest first-try rate
+  const weighted = [];
+  pool.forEach(d=>{ const s=statOf(d.id); const acc = s.seen? s.first/s.seen : 0;
+    const w = 1 + Math.round(3*(1-acc)) + (s.seen===0?2:0);
+    for(let i=0;i<w;i++) weighted.push(d); });
+  const drill = pick(weighted);
+  const q = drill.gen();
+  state.q = {...q, drill, qid:'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)};
+  state.attempts=0; state.solved=false; state.revealed=false;
+  state.work={text:'', strokes:[]}; state.drawing=false;
+}
+function checkAnswer(){
+  const q=state.q; if(!q||state.solved) return;
+  let all=true;
+  q.fields.forEach(f=>{
+    const el=document.getElementById('f-'+f.key);
+    const raw=(el.value||'').replace(',','.').trim();
+    const v=parseFloat(raw);
+    const ok = raw!=='' && isFinite(v) && Math.abs(v-f.val)<=f.tol;
+    f._ok=ok; f._empty = raw==='';
+    el.parentElement.classList.toggle('ok',ok);
+    el.parentElement.classList.toggle('bad',!ok && raw!=='');
+    if(!ok) all=false;
+  });
+  state.attempts++;
+  if(all){
+    state.solved=true;
+    bump(q.drill.id, state.attempts===1, state.attempts);
+    state.streak++; if(state.streak>state.best){ state.best=state.streak; store.set('best',state.best); }
+    upsertHistory();
+  } else if(q.fields.every(f=>f._empty)){
+    state.attempts--;   // nothing typed: not an attempt
+  } else {
+    state.streak=0;
+  }
+  render();
+  if(state.solved){ const b=document.getElementById('nextBtn'); b&&b.focus(); }
+}
+function reveal(){
+  const q=state.q; if(!q) return;
+  state.revealed=true;
+  if(!state.solved) bump(q.drill.id,false,Math.max(state.attempts,1));
+  state.streak=0;
+  upsertHistory();
+  render();
+}
+
+/* ===================== Encre (dessin blanc par-dessus la figure) ===================== */
+const INK = {w:2.6, color:'#fff'};
+function mountInk(){
+  document.querySelectorAll('[data-ink]').forEach(wrap=>{
+    const cv = wrap.querySelector('canvas'); if(!cv) return;
+    const strokes = wrap.dataset.ink==='live' ? state.work.strokes
+      : (state.history.find(h=>h.id===wrap.dataset.ink)?.work.strokes || []);
+    const fit = ()=>{
+      const r = wrap.getBoundingClientRect(); if(!r.width) return;
+      const dpr = Math.min(2, window.devicePixelRatio||1);
+      cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+      paint(ctx, strokes, r.width, r.height);
+    };
+    cv._fit = fit; fit();
+    if(wrap.dataset.ink!=='live') return;           // les figures du cahier sont en lecture seule
+    let cur = null;
+    const pt = e=>{ const r=cv.getBoundingClientRect();
+      return [ (e.clientX-r.left)/r.width, (e.clientY-r.top)/r.height ]; };
+    const redraw = ()=>{ const r=wrap.getBoundingClientRect();
+      paint(cv.getContext('2d'), strokes, r.width, r.height); };
+    cv.addEventListener('pointerdown', e=>{
+      if(!state.drawing) return;
+      e.preventDefault(); cv.setPointerCapture(e.pointerId);
+      const q = pt(e);
+      if(state.tool==='eraser'){ eraseAt(strokes, q); redraw(); upsertHistory(); return; }
+      cur = [q]; strokes.push(cur);
+    });
+    cv.addEventListener('pointermove', e=>{
+      if(!state.drawing) return;
+      const q = pt(e);
+      if(state.tool==='eraser'){ if(e.buttons){ eraseAt(strokes,q); redraw(); } return; }
+      if(!cur) return;
+      e.preventDefault(); cur.push(q); redraw();
+    });
+    const end = ()=>{ if(cur){ cur=null; upsertHistory(); } };
+    cv.addEventListener('pointerup', end);
+    cv.addEventListener('pointercancel', end);
+    cv.addEventListener('pointerleave', end);
+  });
+}
+function paint(ctx, strokes, w, h){
+  ctx.clearRect(0,0,w,h);
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle=INK.color; ctx.lineWidth=INK.w;
+  ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=2;
+  strokes.forEach(st=>{
+    if(st.length===1){ ctx.beginPath(); ctx.arc(st[0][0]*w, st[0][1]*h, INK.w/2, 0, 6.29); ctx.fillStyle=INK.color; ctx.fill(); return; }
+    ctx.beginPath(); ctx.moveTo(st[0][0]*w, st[0][1]*h);
+    for(let i=1;i<st.length;i++) ctx.lineTo(st[i][0]*w, st[i][1]*h);
+    ctx.stroke();
+  });
+  ctx.shadowBlur=0;
+}
+function eraseAt(strokes, q){
+  const R = 0.035;
+  for(let i=strokes.length-1;i>=0;i--)
+    if(strokes[i].some(p=>Math.hypot(p[0]-q[0],(p[1]-q[1])*0.7)<R)) strokes.splice(i,1);
+}
+window.addEventListener('resize', ()=>document.querySelectorAll('[data-ink] canvas').forEach(c=>c._fit&&c._fit()));
+
+/* ===================== Mise à jour ===================== */
+function runningVersion(){
+  try{ const c=localStorage.getItem('opticaide.app');
+    const m=c && c.match(/const APP_VERSION\s*=\s*(\d+)/);
+    return m ? +m[1] : APP_VERSION; }catch(e){ return APP_VERSION; }
+}
+function fromCache(){ return runningVersion() > APP_VERSION; }
+function updMsg(html, kind){
+  const el=document.getElementById('updMsg'); if(!el) return;
+  el.className = 'verdict '+(kind||'hint'); el.style.marginTop='10px'; el.innerHTML = html;
+}
+async function checkUpdate(){
+  if(!UPDATE_URL){ updMsg("Aucune adresse de mise à jour n'a été configurée dans ce fichier.", 'hint'); return; }
+  updMsg('Vérification en cours…','hint');
+  try{
+    const url = UPDATE_URL + (UPDATE_URL.includes('?')?'&':'?') + 'cb=' + Date.now();
+    const r = await fetch(url, {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const txt = await r.text();
+    const m = txt.match(/const APP_VERSION\s*=\s*(\d+)/);
+    if(!m || !txt.includes('<title>Opticaide</title>') || !txt.includes('const DRILLS'))
+      throw new Error('le fichier reçu n\'est pas Opticaide');
+    const remote = +m[1], here = runningVersion();
+    if(remote <= here){ updMsg('Tu as déjà la version la plus récente (v'+here+').','ok'); return; }
+    localStorage.setItem('opticaide.app', txt);
+    updMsg('Version '+remote+' installée — chargement…','ok');
+    setTimeout(()=>{ document.open(); document.write(txt); document.close(); }, 600);
+  }catch(e){
+    updMsg('Mise à jour impossible : '+esc(e.message)+'.<br><span class="small">Vérifie ta connexion, ou que l\'adresse renvoie bien le fichier brut (Raw).</span>','bad');
+  }
+}
+
+/* ===================== Views ===================== */
+const ICON = {
+  pen:'<svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>',
+  eraser:'<svg viewBox="0 0 24 24"><path d="M20 20H8.5L3 14.5a2 2 0 0 1 0-2.8l7.7-7.7a2 2 0 0 1 2.8 0l6.5 6.5a2 2 0 0 1 0 2.8L13 20"/><path d="M7 11l6 6"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+  book:'<svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h12"/></svg>',
+  ok:'<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  bad:'<svg viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>',
+  idea:'<svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.3 11c.5.4.8.9.8 1.5V16h5v-.5c0-.6.3-1.1.8-1.5A6 6 0 0 0 12 3z"/></svg>'
+};
+function viewDrill(){
+  const MODS = [...new Set(DRILLS.map(d=>d.mod))].sort();
+  const inMod = m => DRILLS.filter(d=>d.mod===m).map(d=>d.id);
+  const exactly = ids => ids.length===state.active.size && ids.every(i=>state.active.has(i));
+  const chip = d => `<button class="chip" data-toggle="${d.id}" aria-pressed="${state.active.has(d.id)}"><i></i>${d.nom}</button>`;
+  const modbar = `<div class="chips">
+    <button class="chip modpick" data-mod="all" aria-pressed="${state.active.size===DRILLS.length}">Tous les modules<b>${DRILLS.length}</b></button>
+    ${MODS.map(m=>`<button class="chip modpick" data-mod="${m}" aria-pressed="${exactly(inMod(m))}">Module ${m}<b>${inMod(m).length}</b></button>`).join('')}</div>`;
+  const chips = modbar + `<details class="picker" ${state.pickOpen?'open':''} id="picker">
+    <summary>Choisir équation par équation <em>${state.active.size} active${state.active.size>1?'s':''} sur ${DRILLS.length}</em></summary>
+    <div class="pickbody">${MODS.map(m=>`<div class="modgroup"><span class="modlab">M${m}</span>
+      <div class="chips">${DRILLS.filter(d=>d.mod===m).map(chip).join('')}</div></div>`).join('')}</div></details>`;
+  const seen = Object.values(state.stats).reduce((a,s)=>a+s.seen,0);
+  const first = Object.values(state.stats).reduce((a,s)=>a+s.first,0);
+  const bar = `<div class="statbar">
+    <span class="pill ${state.streak>2?'hot':''}"><b class="num">${state.streak}</b> série</span>
+    <span class="pill"><b class="num">${state.best}</b> record</span>
+    <span class="pill"><b class="num">${seen}</b> questions</span>
+    <span class="pill"><b class="num">${seen?Math.round(100*first/seen):0}%</b> du 1er coup</span></div>`;
+  if(!state.q) return `${bar}${chips}<div class="empty">Choisis au moins une équation pour commencer.</div>`;
+  const q=state.q;
+  const fields = q.fields.map(f=>`<div class="field ${f._ok?'ok':(f._ok===false&&!f._empty?'bad':'')}">
+      <label for="f-${f.key}">${f.label} =</label>
+      <input id="f-${f.key}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
+        placeholder="…" ${state.solved?`value="${f.unit==='km/s'?fmtInt(f.val):fmt(f.val,3)}" disabled`:''}>
+      <span class="unit">${f.unit}</span></div>`).join('');
+  let verdict='';
+  if(state.solved) verdict=`<div class="verdict ok">${ICON.ok}<span>Exact${state.attempts===1?' — du premier coup.':` après ${state.attempts} essais.`}</span></div>`;
+  else if(state.attempts===1) verdict=`<div class="verdict bad">${ICON.bad}<span>Pas encore. Revois tes unités et réessaie.</span></div>`;
+  else if(state.attempts>=2) verdict=`<div class="verdict hint">${ICON.idea}<span>${q.drill.hint}</span></div>`;
+  const sol = (state.solved||state.revealed) ? `<div class="sol"><h4>Démarche</h4>${
+      q.steps.map(([t,c])=>`<div class="step ${c||''}">${t}</div>`).join('')}</div>` : '';
+  const actions = state.solved || state.revealed
+    ? `<div class="row"><button class="btn primary" id="nextBtn">Question suivante →</button></div>`
+    : `<div class="row"><button class="btn primary" id="checkBtn">Vérifier</button>
+       <button class="btn ghost" id="revealBtn">Voir la solution</button>
+       <button class="btn ghost" id="skipBtn">Passer</button></div>`;
+  return `${bar}${chips}
+  <section class="card drill fade">
+    <div class="pane-vis">
+      <div class="figwrap ${state.drawing?'on':''}" data-ink="live" id="figWrap">${q.scene}<canvas></canvas></div>
+      <div class="inkbar">
+        <button class="inkbtn" id="inkToggle" aria-pressed="${state.drawing}" title="Dessiner par-dessus la figure">
+          ${ICON.pen}${state.drawing?'Dessin activé':'Dessiner'}</button>
+        ${state.drawing?`<button class="inkbtn" data-tool="pen" aria-pressed="${state.tool==='pen'}">${ICON.pen}Crayon</button>
+        <button class="inkbtn" data-tool="eraser" aria-pressed="${state.tool==='eraser'}">${ICON.eraser}Gomme</button>
+        <span class="sep"></span>
+        <button class="inkbtn" id="inkClear">${ICON.trash}Effacer</button>`:''}
+      </div>
+      <div class="scale-note">Figure construite mathématiquement à partir des valeurs du problème. Les angles ou l’échelle verticale peuvent être exagérés pour rester lisibles&nbsp;: les étiquettes donnent toujours les valeurs réelles.</div></div>
+    <div class="pane-q">
+      <span class="tag">Module ${q.drill.mod} · ${q.drill.nom}</span>
+      <div class="formula mono">${q.drill.eq}</div>
+      <p class="prompt" style="margin:0">${q.prompt}</p>
+      <div class="givens">${q.givens.map(g=>`<span class="given mono">${g}</span>`).join('')}</div>
+      <div class="fields">${fields}</div>
+      <div class="work">
+        <div class="hd"><span>Brouillon</span><em class="muted">enregistré automatiquement</em></div>
+        <textarea id="workBox" placeholder="Écris ta démarche ici : ce que tu cherches, la formule choisie, tes étapes…&#10;Ex.  n sin i = n' sin i'&#10;     1.523 × sin 8 = sin i'&#10;     ..." spellcheck="false">${esc(state.work.text)}</textarea>
+      </div>
+      ${verdict}${actions}${sol}
+    </div>
+  </section>`;
+}
+function viewRef(){
+  return `<div class="ref">${REF.map(r=>`<section class="card refcard">
+    <h3><span class="mod">Module ${r.mod}</span>${r.nom}</h3>
+    <div class="eq">${r.eq}</div>
+    <dl class="syms">${r.syms.map(([s,d])=>`<dt>${s}</dt><dd>${d}</dd>`).join('')}</dl>
+    ${r.warn?`<div class="warn">${r.warn}</div>`:''}
+  </section>`).join('')}</div>`;
+}
+function viewHist(){
+  if(!state.history.length) return `<div class="empty">Ton cahier est vide.<br><span class="small">Chaque exercice où tu écris un brouillon, tu dessines, ou que tu termines, est conservé ici pour révision.</span></div>`;
+  const dayOf = ts => { const d=new Date(ts), t=new Date(), y=new Date(Date.now()-864e5);
+    const same=(a,b)=>a.toDateString()===b.toDateString();
+    return same(d,t)?"Aujourd'hui":same(d,y)?'Hier':d.toLocaleDateString('fr-CA',{day:'numeric',month:'long'}); };
+  let out='', lastDay='';
+  state.history.forEach(h=>{
+    const day = dayOf(h.ts);
+    if(day!==lastDay){ out += `<h3 class="eyebrow" style="margin:14px 0 2px">${day}</h3>`; lastDay=day; }
+    const cls = h.solved ? (h.attempts===1?'ok':'mid') : 'no';
+    const time = new Date(h.ts).toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'});
+    const open = state.openHist===h.id;
+    out += `<details class="hitem" ${open?'open':''} data-hist="${h.id}">
+      <summary><span class="dot2 ${cls}"></span>
+        <span class="ttl"><b>${h.prompt.replace(/<[^>]+>/g,'')}</b>
+          <span>${esc(h.nom)} · ${time} · ${h.solved?(h.attempts===1?'réussi du 1er coup':'réussi en '+h.attempts+' essais'):'solution consultée'}</span></span>
+        <span class="badges">${(h.work.text||'').trim()?'<span class="hbadge">notes</span>':''}${h.work.strokes.length?'<span class="hbadge">dessin</span>':''}</span>
+      </summary>
+      ${open?`<div class="hbody">
+        <div><div class="figwrap ${h.work.strokes.length?'inked':''}" data-ink="${h.id}">${h.scene}<canvas></canvas></div></div>
+        <div>
+          <div class="hrow">${h.givens.map(g=>`<span class="given mono">${esc(g)}</span>`).join('')}</div>
+          <h5>Réponse</h5><div class="pre">${h.fields.map(f=>`${esc(f.label)} = ${f.unit==='km/s'?fmtInt(f.val):fmt(f.val,3)} ${esc(f.unit)}`).join('\n')}</div>
+          <h5 style="margin-top:10px">Ton brouillon</h5>
+          <div class="pre">${(h.work.text||'').trim()?esc(h.work.text):'<span class="muted">— aucune note écrite —</span>'}</div>
+          <details style="margin-top:10px"><summary class="small">Revoir la démarche</summary>
+            <div class="pre" style="margin-top:6px">${h.steps.map(([t])=>esc(t)).join('\n')}</div></details>
+        </div></div>`:''}
+    </details>`;
+  });
+  return `<div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <p class="small muted" style="margin:0">${state.history.length} exercice${state.history.length>1?'s':''} conservé${state.history.length>1?'s':''} (les ${HIST_MAX} plus récents).</p>
+      <button class="btn ghost" id="clearHist">Vider le cahier</button></div>
+    <div class="hist">${out}</div>`;
+}
+function viewStats(){
+  const seen=Object.values(state.stats).reduce((a,s)=>a+s.seen,0);
+  const first=Object.values(state.stats).reduce((a,s)=>a+s.first,0);
+  const tries=Object.values(state.stats).reduce((a,s)=>a+s.tries,0);
+  const rows = DRILLS.map(d=>{
+    const s=statOf(d.id); const pct = s.seen? Math.round(100*s.first/s.seen) : null;
+    const cls = pct===null?'':(pct<50?'low':pct<80?'mid':'');
+    return `<div class="strow"><div class="nm">${d.nom}<small class="mono">${d.eq}</small></div>
+      <div class="bar"><i class="${cls}" style="width:${pct===null?0:pct}%"></i></div>
+      <div class="pct">${pct===null?'—':pct+'%'}<br><span class="small">${s.seen} q.</span></div></div>`;
+  }).join('');
+  return `<div class="grid-stats">
+      <div><b class="num">${seen}</b><span>questions faites</span></div>
+      <div><b class="num">${seen?Math.round(100*first/seen):0}%</b><span>réussites du 1er coup</span></div>
+      <div><b class="num">${seen?(tries/seen).toFixed(2):'0'}</b><span>essais par question</span></div>
+      <div><b class="num">${state.best}</b><span>meilleure série</span></div>
+    </div>
+    <section class="card" style="padding:6px 16px 14px">${rows}</section>
+    <p class="small muted" style="margin-top:12px">Le tirage des questions privilégie les équations où ton taux de réussite au premier essai est le plus faible.</p>
+    <div class="row" style="margin-top:12px"><button class="btn ghost" id="resetBtn">Réinitialiser les statistiques</button></div>
+    <section class="card" style="padding:15px 16px;margin-top:16px">
+      <h3 style="font-size:1rem">Version ${runningVersion()}${fromCache()?' <span class="hbadge">mise à jour installée</span>':''}</h3>
+      <p class="small muted" style="margin:6px 0 12px">
+        ${UPDATE_URL
+          ? "Le bouton télécharge la dernière version et l'installe sur cet appareil. Le fichier que tu as téléchargé n'a pas besoin d'être remplacé : la mise à jour est conservée et rechargée automatiquement."
+          : "Aucune adresse de mise à jour n'est configurée dans ce fichier. Pour l'activer : héberge le fichier (Gist GitHub → bouton <b>Raw</b>) et colle son adresse dans <span class=\"mono\">UPDATE_URL</span>, en haut du script."}
+      </p>
+      <div class="row">
+        <button class="btn primary" id="updBtn" ${UPDATE_URL?'':'disabled style="opacity:.5;cursor:not-allowed"'}>Vérifier les mises à jour</button>
+        ${fromCache()?'<button class="btn ghost" id="updRevert">Revenir à la version du fichier</button>':''}
+      </div>
+      <div id="updMsg"></div>
+    </section>`;
+}
+function render(){
+  document.getElementById('tabs').innerHTML =
+    [['drill','Exercices'],['ref','Formulaire'],['hist','Cahier'],['stats','Progrès']]
+      .map(([k,l])=>`<button data-tab="${k}" aria-pressed="${state.tab===k}">${l}</button>`).join('');
+  document.getElementById('view').innerHTML =
+    state.tab==='drill' ? viewDrill() : state.tab==='ref' ? viewRef()
+    : state.tab==='hist' ? viewHist() : viewStats();
+  mountInk();
+}
+
+/* ===================== Events ===================== */
+document.addEventListener('click', e=>{
+  const t=e.target;
+  const tab=t.closest('[data-tab]');
+  if(tab){ state.tab=tab.dataset.tab; render(); window.scrollTo({top:0}); return; }
+  const tog=t.closest('[data-toggle]');
+  if(tog){ const id=tog.dataset.toggle;
+    state.active.has(id)?state.active.delete(id):state.active.add(id);
+    if(!state.active.size) state.active.add(id);
+    store.set('active',[...state.active]);
+    if(!state.q || !state.active.has(state.q.drill.id)) newQuestion();
+    render(); return; }
+  const mp=t.closest('[data-mod]');
+  if(mp){ const v=mp.dataset.mod;
+    state.active = new Set(v==='all' ? DRILLS.map(d=>d.id) : DRILLS.filter(d=>d.mod===+v).map(d=>d.id));
+    store.set('active',[...state.active]);
+    if(!state.q || !state.active.has(state.q.drill.id)) newQuestion();
+    render(); return; }
+  if(t.closest('#picker>summary')){
+    setTimeout(()=>{ state.pickOpen = document.getElementById('picker')?.open || false;
+      store.set('pickOpen', state.pickOpen); }, 0); return; }
+  if(t.closest('#inkToggle')){ state.drawing=!state.drawing; render(); return; }
+  const tl=t.closest('[data-tool]'); if(tl){ state.tool=tl.dataset.tool; render(); return; }
+  if(t.closest('#inkClear')){ state.work.strokes.length=0; upsertHistory(); render(); return; }
+  const hi=t.closest('[data-hist]>summary'); if(hi){
+    const d=hi.parentElement; state.openHist = d.open ? null : d.dataset.hist;
+    setTimeout(()=>render(),0); return; }
+  if(t.closest('#clearHist')){
+    if(confirm('Vider le cahier ? Les brouillons et dessins conservés seront effacés.')){
+      state.history=[]; state.openHist=null; saveHistory(); render(); } return; }
+  if(t.closest('#checkBtn')){ checkAnswer(); return; }
+  if(t.closest('#revealBtn')){ reveal(); return; }
+  if(t.closest('#skipBtn')){ state.streak=0; newQuestion(); render(); return; }
+  if(t.closest('#nextBtn')){ newQuestion(); render();
+    const f=document.querySelector('.field input'); f&&f.focus(); return; }
+  if(t.closest('#themeBtn')){
+    state.theme = state.theme==='dark' ? 'light' : state.theme==='light' ? 'system' : 'dark';
+    store.set('theme',state.theme); applyTheme();
+    const b=document.getElementById('themeBtn');
+    if(b) b.title = 'Thème : '+{dark:'sombre',light:'clair',system:'selon le système'}[state.theme];
+    return; }
+  if(t.closest('#updBtn')){ checkUpdate(); return; }
+  if(t.closest('#updRevert')){
+    if(confirm('Revenir à la version contenue dans le fichier téléchargé ?')){
+      try{ localStorage.removeItem('opticaide.app'); }catch(e){}
+      location.reload(); } return; }
+  if(t.closest('#resetBtn')){
+    if(confirm('Effacer toutes les statistiques sur cet appareil ? (le cahier est conservé)')){
+      state.stats={}; state.best=0; state.streak=0;
+      store.set('stats',{}); store.set('best',0); render(); } return; }
+});
+document.addEventListener('input', e=>{
+  if(e.target.id!=='workBox') return;
+  state.work.text = e.target.value;
+  clearTimeout(window.__wt); window.__wt = setTimeout(upsertHistory, 500);
+});
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Enter') return;
+  if(state.tab!=='drill') return;
+  if(e.target.tagName==='TEXTAREA') return;   // Entrée = nouvelle ligne dans le brouillon
+  e.preventDefault();
+  if(state.solved||state.revealed){ newQuestion(); render(); const f=document.querySelector('.field input'); f&&f.focus(); }
+  else checkAnswer();
+});
+
+newQuestion();
+render();
+</script>
+</body>
+</html>
