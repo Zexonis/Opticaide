@@ -144,6 +144,57 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
   border:1px solid var(--line-2);border-radius:6px;padding:4px 7px;margin-top:3px;white-space:nowrap}
 .modgroup .chips{margin:0}
 
+/* ---------- masquage (mode découverte) ---------- */
+.cloak{position:relative;display:block;width:100%;text-align:left;padding:0;border:0;background:transparent;
+  border-radius:10px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.cloak>.cin{filter:blur(7px);opacity:.5;pointer-events:none;transition:filter .18s,opacity .18s}
+.cloak::after{content:attr(data-hint);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  gap:6px;font-size:.76rem;font-weight:700;color:var(--accent);text-align:center;padding:0 10px;
+  border:1px dashed color-mix(in srgb,var(--accent) 45%,transparent);border-radius:10px}
+.cloak:hover::after{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.cloak:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cloak.open{cursor:default}
+.cloak.open>.cin{filter:none;opacity:1}
+.cloak.open::after{content:none}
+.cin{display:flex;flex-direction:column;gap:9px;align-items:flex-start}
+
+/* ---------- figure masquée ---------- */
+.figwrap.fighide>svg{visibility:hidden}
+.fignote{display:none}
+.figwrap.fighide .fignote{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;
+  flex-direction:column;gap:5px;color:var(--muted);font-size:.8rem;text-align:center;padding:0 26px;
+  pointer-events:none;border:1px dashed var(--line);border-radius:10px;z-index:1}
+.fignote b{color:var(--accent);font-size:.84rem}
+
+/* ---------- choix de l'équation ---------- */
+.eqquiz{border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:11px 12px;
+  display:flex;flex-direction:column;gap:7px}
+.eqquiz>.q{font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.eqopts{display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto}
+.eqopt{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;width:100%;text-align:left;
+  padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);
+  font-family:"IBM Plex Mono",monospace;font-size:.78rem;line-height:1.35;color:var(--ink)}
+.eqopt:hover{border-color:var(--accent)}
+.eqopt .mtag{font-family:"IBM Plex Sans",sans-serif;font-size:.62rem;font-weight:700;color:var(--muted);
+  background:var(--surface-2);border-radius:5px;padding:2px 6px}
+.eqopt.no{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--surface));
+  color:var(--bad);text-decoration:line-through;opacity:.7}
+.eqopt.yes{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--surface));color:var(--ok)}
+
+/* ---------- session ---------- */
+.sess{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:11px 13px;margin-bottom:16px}
+.sess .hd{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.sess .hd b{font-size:.88rem}
+.sess .hd span{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.sbar{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.sbar i{display:block;height:100%;border-radius:5px;transition:width .3s,background .3s}
+.sdots{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.sdot{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:600;color:var(--muted);
+  background:var(--surface-2);border:1px solid var(--line-2);border-radius:999px;padding:3px 8px}
+.sdot.done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent);
+  background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.sdot em{font-style:normal;font-variant-numeric:tabular-nums;opacity:.75}
+
 /* ---------- brouillon + encre ---------- */
 .figwrap{position:relative;border-radius:10px;overflow:hidden;touch-action:manipulation}
 .figwrap canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;
@@ -255,8 +306,9 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
                  gist.githubusercontent.com et raw.githubusercontent.com.
                  Laisser vide désactive simplement le bouton.
    ======================================================================= */
-const APP_VERSION = 7;
+const APP_VERSION = 8;
 const UPDATE_URL  = 'https://raw.githubusercontent.com/Zexonis/Opticaide/main/index.html';
+
 /* Au démarrage : si une version plus récente a déjà été téléchargée et mise
    en cache sur cet appareil, on la charge à la place du fichier local.
    ?fresh=1 dans l'adresse force le fichier d'origine (sortie de secours). */
@@ -403,7 +455,7 @@ function scenePrism(o){
     s+=line(ex,yr,ex+150,yr,{stroke:'var(--ghost)',w:1.5,dash:'4 5',op:.6});
     s+=txt(ex+100,yr-12,'sortie ?','lab-gh');
   }
-  s+=angleArc(ex,yr,28,180-aDraw,180,'i = a');
+  s+=angleArc(ex,yr,28,180-aDraw,180, (typeof state!=='undefined' && state.cloakOn) ? 'i' : 'i = a');
   s+=angleArc(ax,ay,38,90-aDraw,90,o.hideA?Q:'a = '+fmt(a)+'°');
   s+=txt(30,yr-12,'rayon ⊥','lab-ray','start');
   s+=txt(ax+h*tan(aDraw)/2,by+19,'BASE','lab-gh');
@@ -796,6 +848,11 @@ const state = {
   best: store.get('best', 0),
   theme: store.get('theme','dark'),   // sombre par défaut : l'encre blanche et les rayons ressortent mieux
   q: null, attempts: 0, solved: false, revealed: false,
+  cloakOn: store.get('cloak', true),   // mode découverte : formule, valeurs et figure masquées
+  reveal: {eq:false, giv:false, fig:false},
+  eqQuiz: false, eqWrong: [], eqSkipped: false,   // choix multiple sur l'équation
+  sessionOn: store.get('sessionOn', false),
+  session: store.get('session', {}),   // drillId -> nombre de réussites propres
   work: {text:'', strokes:[]},       // brouillon de la question en cours
   drawing: false, tool: 'pen',
   pickOpen: store.get('pickOpen', false),
@@ -816,6 +873,7 @@ function upsertHistory(){
     prompt:q.prompt, givens:q.givens, scene:q.scene, steps:q.steps,
     fields:q.fields.map(f=>({label:f.label, val:f.val, unit:f.unit})),
     solved:state.solved, revealed:state.revealed, attempts:state.attempts,
+    eqSkipped:state.eqSkipped, eqWrong:state.eqWrong.length,
     work:{text:state.work.text, strokes:state.work.strokes}
   };
   const i = state.history.findIndex(h=>h.id===entry.id);
@@ -828,6 +886,21 @@ function applyTheme(){
   if(state.theme==='system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme',state.theme);
 }
 applyTheme();
+const SESSION_GOAL = 3;
+function sessDone(id){ return (state.session[id]||0) >= SESSION_GOAL; }
+function sessPool(){            // drills encore à travailler dans la sélection courante
+  const act = DRILLS.filter(d=>state.active.has(d.id));
+  if(!state.sessionOn) return act;
+  const left = act.filter(d=>!sessDone(d.id));
+  return left.length ? left : [];
+}
+function sessPct(){
+  const act = DRILLS.filter(d=>state.active.has(d.id));
+  if(!act.length) return 0;
+  const got = act.reduce((a,d)=>a+Math.min(state.session[d.id]||0, SESSION_GOAL), 0);
+  return Math.round(100*got/(act.length*SESSION_GOAL));
+}
+function sessColor(p){ return `color-mix(in srgb, var(--ok) ${p}%, var(--bad))`; }
 function statOf(id){ return state.stats[id] || {seen:0, first:0, tries:0}; }
 function bump(id, firstTry, tries){
   const s = statOf(id);
@@ -836,8 +909,8 @@ function bump(id, firstTry, tries){
 }
 
 /* ===================== Question flow ===================== */
-function newQuestion(){
-  const pool = DRILLS.filter(d=>state.active.has(d.id));
+function newQuestion(forceId){
+  let pool = forceId ? DRILLS.filter(d=>d.id===forceId) : sessPool();
   if(!pool.length){ state.q=null; return; }
   // favour the drills with the weakest first-try rate
   const weighted = [];
@@ -849,6 +922,7 @@ function newQuestion(){
   state.q = {...q, drill, qid:'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)};
   state.attempts=0; state.solved=false; state.revealed=false;
   state.work={text:'', strokes:[]}; state.drawing=false;
+  state.reveal={eq:false, giv:false, fig:false}; state.eqQuiz=false; state.eqWrong=[]; state.eqSkipped=false;
 }
 function checkAnswer(){
   const q=state.q; if(!q||state.solved) return;
@@ -868,6 +942,10 @@ function checkAnswer(){
     state.solved=true;
     bump(q.drill.id, state.attempts===1, state.attempts);
     state.streak++; if(state.streak>state.best){ state.best=state.streak; store.set('best',state.best); }
+    if(!state.revealed){
+      state.session[q.drill.id] = Math.min((state.session[q.drill.id]||0)+1, SESSION_GOAL);
+      store.set('session', state.session);
+    }
     upsertHistory();
   } else if(q.fields.every(f=>f._empty)){
     state.attempts--;   // nothing typed: not an attempt
@@ -980,6 +1058,7 @@ async function checkUpdate(){
 
 /* ===================== Views ===================== */
 const ICON = {
+  eye:'<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
   pen:'<svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>',
   eraser:'<svg viewBox="0 0 24 24"><path d="M20 20H8.5L3 14.5a2 2 0 0 1 0-2.8l7.7-7.7a2 2 0 0 1 2.8 0l6.5 6.5a2 2 0 0 1 0 2.8L13 20"/><path d="M7 11l6 6"/></svg>',
   trash:'<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
@@ -995,7 +1074,11 @@ function viewDrill(){
   const chip = d => `<button class="chip" data-toggle="${d.id}" aria-pressed="${state.active.has(d.id)}"><i></i>${d.nom}</button>`;
   const modbar = `<div class="chips">
     <button class="chip modpick" data-mod="all" aria-pressed="${state.active.size===DRILLS.length}">Tous les modules<b>${DRILLS.length}</b></button>
-    ${MODS.map(m=>`<button class="chip modpick" data-mod="${m}" aria-pressed="${exactly(inMod(m))}">Module ${m}<b>${inMod(m).length}</b></button>`).join('')}</div>`;
+    ${MODS.map(m=>`<button class="chip modpick" data-mod="${m}" aria-pressed="${exactly(inMod(m))}">Module ${m}<b>${inMod(m).length}</b></button>`).join('')}
+    <button class="chip modpick" id="cloakBtn" aria-pressed="${state.cloakOn}"
+      title="Masque la formule, les valeurs et la figure : à toi de trouver quelle équation utiliser">Mode découverte</button>
+    <button class="chip modpick" id="sessBtn" aria-pressed="${state.sessionOn}"
+      title="Chaque équation quitte le tirage après ${SESSION_GOAL} réussites">Session</button></div>`;
   const chips = modbar + `<details class="picker" ${state.pickOpen?'open':''} id="picker">
     <summary>Choisir équation par équation <em>${state.active.size} active${state.active.size>1?'s':''} sur ${DRILLS.length}</em></summary>
     <div class="pickbody">${MODS.map(m=>`<div class="modgroup"><span class="modlab">M${m}</span>
@@ -1007,8 +1090,22 @@ function viewDrill(){
     <span class="pill"><b class="num">${state.best}</b> record</span>
     <span class="pill"><b class="num">${seen}</b> questions</span>
     <span class="pill"><b class="num">${seen?Math.round(100*first/seen):0}%</b> du 1er coup</span></div>`;
-  if(!state.q) return `${bar}${chips}<div class="empty">Choisis au moins une équation pour commencer.</div>`;
+  const act = DRILLS.filter(d=>state.active.has(d.id));
+  const pct = sessPct();
+  const sessBar = state.sessionOn ? `<section class="sess">
+      <div class="hd"><b>Concepts maîtrisés</b><span>${pct} % · ${SESSION_GOAL} réussites par équation</span></div>
+      <div class="sbar"><i style="width:${pct}%;background:${sessColor(pct)}"></i></div>
+      <div class="sdots">${act.map(d=>{ const n=Math.min(state.session[d.id]||0,SESSION_GOAL);
+        return `<span class="sdot ${n>=SESSION_GOAL?'done':''}">${esc(d.nom)}<em>${n}/${SESSION_GOAL}</em></span>`; }).join('')}
+        <button class="chip" id="sessReset" style="font-size:.7rem;padding:3px 9px">Nouvelle session</button></div>
+    </section>` : '';
+  if(state.sessionOn && !sessPool().length && act.length) return `${bar}${chips}${sessBar}
+    <div class="empty"><b style="color:var(--ok);font-size:1.05rem">Session terminée</b><br>
+      Tu as réussi ${SESSION_GOAL} exercices de chaque équation sélectionnée.<br>
+      <span class="small">Lance une nouvelle session, ou élargis ta sélection de modules.</span></div>`;
+  if(!state.q) return `${bar}${chips}${sessBar}<div class="empty">Choisis au moins une équation pour commencer.</div>`;
   const q=state.q;
+  const figShown = !state.cloakOn || state.reveal.fig || state.solved || state.revealed;
   const fields = q.fields.map(f=>`<div class="field ${f._ok?'ok':(f._ok===false&&!f._empty?'bad':'')}">
       <label for="f-${f.key}">${f.label} =</label>
       <input id="f-${f.key}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
@@ -1020,16 +1117,20 @@ function viewDrill(){
   else if(state.attempts>=2) verdict=`<div class="verdict hint">${ICON.idea}<span>${q.drill.hint}</span></div>`;
   const sol = (state.solved||state.revealed) ? `<div class="sol"><h4>Démarche</h4>${
       q.steps.map(([t,c])=>`<div class="step ${c||''}">${t}</div>`).join('')}</div>` : '';
+  const failed = state.revealed || state.attempts>1;
   const actions = state.solved || state.revealed
-    ? `<div class="row"><button class="btn primary" id="nextBtn">Question suivante →</button></div>`
+    ? `<div class="row"><button class="btn primary" id="nextBtn">Question suivante →</button>
+       ${failed?`<button class="btn" id="againBtn">Refaire ce type d'exercice</button>`:''}</div>`
     : `<div class="row"><button class="btn primary" id="checkBtn">Vérifier</button>
        <button class="btn ghost" id="revealBtn">Voir la solution</button>
        <button class="btn ghost" id="skipBtn">Passer</button></div>`;
-  return `${bar}${chips}
+  return `${bar}${chips}${sessBar}
   <section class="card drill fade">
     <div class="pane-vis">
-      <div class="figwrap ${state.drawing?'on':''}" data-ink="live" id="figWrap">${q.scene}<canvas></canvas></div>
+      <div class="figwrap ${state.drawing?'on':''} ${figShown?'':'fighide'}" data-ink="live" id="figWrap">${q.scene}
+        <span class="fignote"><b>Figure masquée</b>Dessine ta propre représentation, puis compare.</span><canvas></canvas></div>
       <div class="inkbar">
+        ${state.cloakOn && !(state.solved||state.revealed) ? `<button class="inkbtn" id="figToggle" aria-pressed="${figShown}">${ICON.eye}${figShown?'Masquer la figure':'Afficher la figure'}</button>` : ''}
         <button class="inkbtn" id="inkToggle" aria-pressed="${state.drawing}" title="Dessiner par-dessus la figure">
           ${ICON.pen}${state.drawing?'Dessin activé':'Dessiner'}</button>
         ${state.drawing?`<button class="inkbtn" data-tool="pen" aria-pressed="${state.tool==='pen'}">${ICON.pen}Crayon</button>
@@ -1039,14 +1140,40 @@ function viewDrill(){
       </div>
       <div class="scale-note">Figure construite mathématiquement à partir des valeurs du problème. Les angles ou l’échelle verticale peuvent être exagérés pour rester lisibles&nbsp;: les étiquettes donnent toujours les valeurs réelles.</div></div>
     <div class="pane-q">
-      <span class="tag">Module ${q.drill.mod} · ${q.drill.nom}</span>
-      <div class="formula mono">${q.drill.eq}</div>
-      <p class="prompt" style="margin:0">${q.prompt}</p>
-      <div class="givens">${q.givens.map(g=>`<span class="given mono">${g}</span>`).join('')}</div>
+      ${(() => {
+        const done = state.solved || state.revealed;      // après coup, on montre tout
+        const head = `<span class="tag">Module ${q.drill.mod} · ${esc(q.drill.nom)}</span>
+          <div class="formula mono" style="width:100%">${q.drill.eq}</div>`;
+        const giv  = `<div class="givens">${q.givens.map(g=>`<span class="given mono">${g}</span>`).join('')}</div>`;
+        if(!state.cloakOn) return head + `<p class="prompt" style="margin:0">${q.prompt}</p>` + giv;
+        const eqOpen = state.reveal.eq || done, gvOpen = state.reveal.giv || done;
+        if(!eqOpen && state.eqQuiz){
+          const opts = DRILLS.map((d,i)=>{
+            const bad = state.eqWrong.includes(d.id);
+            return `<button type="button" class="eqopt ${bad?'no':''}" data-eqpick="${d.id}" ${bad?'disabled':''}>
+              <span class="mtag">M${d.mod}</span><span>${d.eq}</span></button>`; }).join('');
+          return `<div class="eqquiz"><span class="q">Laquelle de ces équations s'applique ?</span>
+            <div class="eqopts">${opts}</div>
+            ${state.eqWrong.length?`<span class="small" style="color:var(--bad)">Pas celle-là — regarde ce que l'énoncé te donne et ce qu'il demande.</span>`:''}
+            <button type="button" class="btn ghost" id="eqSkip" style="align-self:flex-start;padding:7px 12px;font-size:.82rem"
+              title="Révèle directement la bonne équation, sans pénalité">Passer la devinette</button>
+            </div>
+            <p class="prompt" style="margin:0">${q.prompt}</p>`
+            + (gvOpen ? giv : `<button type="button" class="cloak" data-cloak="giv"
+                data-hint="Identifie les valeurs — toucher pour révéler"><span class="cin">${giv}</span></button>`);
+        }
+        return `<button type="button" class="cloak ${eqOpen?'open':''}" data-cloak="eq"
+            data-hint="Quelle équation ? — toucher pour choisir" ${eqOpen?'':'aria-label="Choisir l\'équation"'}>
+            <span class="cin">${head}</span></button>
+          <p class="prompt" style="margin:0">${q.prompt}</p>
+          <button type="button" class="cloak ${gvOpen?'open':''}" data-cloak="giv"
+            data-hint="Identifie les valeurs — toucher pour révéler" ${gvOpen?'':'aria-label="Révéler les valeurs identifiées"'}>
+            <span class="cin">${giv}</span></button>`;
+      })()}
       <div class="fields">${fields}</div>
       <div class="work">
         <div class="hd"><span>Brouillon</span><em class="muted">enregistré automatiquement</em></div>
-        <textarea id="workBox" placeholder="Écris ta démarche ici : ce que tu cherches, la formule choisie, tes étapes…&#10;Ex.  n sin i = n' sin i'&#10;     1.523 × sin 8 = sin i'&#10;     ..." spellcheck="false">${esc(state.work.text)}</textarea>
+        <textarea id="workBox" placeholder="Écris ta démarche ici : ce que tu cherches, la formule que tu choisis, tes étapes, tes calculs intermédiaires…" spellcheck="false">${esc(state.work.text)}</textarea>
       </div>
       ${verdict}${actions}${sol}
     </div>
@@ -1076,7 +1203,7 @@ function viewHist(){
       <summary><span class="dot2 ${cls}"></span>
         <span class="ttl"><b>${h.prompt.replace(/<[^>]+>/g,'')}</b>
           <span>${esc(h.nom)} · ${time} · ${h.solved?(h.attempts===1?'réussi du 1er coup':'réussi en '+h.attempts+' essais'):'solution consultée'}</span></span>
-        <span class="badges">${(h.work.text||'').trim()?'<span class="hbadge">notes</span>':''}${h.work.strokes.length?'<span class="hbadge">dessin</span>':''}</span>
+        <span class="badges">${h.eqSkipped?'<span class="hbadge">devinette passée</span>':(h.eqWrong?`<span class="hbadge">équation : ${h.eqWrong+1}ᵉ essai</span>`:'')}${(h.work.text||'').trim()?'<span class="hbadge">notes</span>':''}${h.work.strokes.length?'<span class="hbadge">dessin</span>':''}</span>
       </summary>
       ${open?`<div class="hbody">
         <div><div class="figwrap ${h.work.strokes.length?'inked':''}" data-ink="${h.id}">${h.scene}<canvas></canvas></div></div>
@@ -1160,6 +1287,26 @@ document.addEventListener('click', e=>{
   if(t.closest('#picker>summary')){
     setTimeout(()=>{ state.pickOpen = document.getElementById('picker')?.open || false;
       store.set('pickOpen', state.pickOpen); }, 0); return; }
+  const ck=t.closest('[data-cloak]');
+  if(ck){ const k=ck.dataset.cloak;
+    if(k==='eq'){ state.eqQuiz=true; } else { state.reveal[k]=true; }
+    render(); return; }
+  if(t.closest('#eqSkip')){ state.reveal.eq=true; state.eqQuiz=false; state.eqSkipped=true; render(); return; }
+  const ep=t.closest('[data-eqpick]');
+  if(ep){ const id=ep.dataset.eqpick;
+    if(id===state.q.drill.id){ state.reveal.eq=true; state.eqQuiz=false; }
+    else if(!state.eqWrong.includes(id)) state.eqWrong.push(id);
+    render(); return; }
+  if(t.closest('#figToggle')){ state.reveal.fig=!state.reveal.fig; render(); return; }
+  if(t.closest('#againBtn')){ newQuestion(state.q.drill.id); render();
+    const f=document.querySelector('.field input'); f&&f.focus(); return; }
+  if(t.closest('#sessBtn')){ state.sessionOn=!state.sessionOn; store.set('sessionOn',state.sessionOn);
+    if(state.sessionOn && state.q && sessDone(state.q.drill.id)) newQuestion();
+    render(); return; }
+  if(t.closest('#sessReset')){
+    if(confirm('Remettre à zéro la progression de la session ?')){
+      state.session={}; store.set('session',{}); if(!state.q) newQuestion(); render(); } return; }
+  if(t.closest('#cloakBtn')){ state.cloakOn=!state.cloakOn; store.set('cloak',state.cloakOn); render(); return; }
   if(t.closest('#inkToggle')){ state.drawing=!state.drawing; render(); return; }
   const tl=t.closest('[data-tool]'); if(tl){ state.tool=tl.dataset.tool; render(); return; }
   if(t.closest('#inkClear')){ state.work.strokes.length=0; upsertHistory(); render(); return; }
@@ -1199,6 +1346,7 @@ document.addEventListener('keydown', e=>{
   if(e.key!=='Enter') return;
   if(state.tab!=='drill') return;
   if(e.target.tagName==='TEXTAREA') return;   // Entrée = nouvelle ligne dans le brouillon
+  if(e.target.closest && e.target.closest('[data-cloak]')) return;   // Entrée = révéler le voile
   e.preventDefault();
   if(state.solved||state.revealed){ newQuestion(); render(); const f=document.querySelector('.field input'); f&&f.focus(); }
   else checkAnswer();
