@@ -182,6 +182,7 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
 .eqopt.yes{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--surface));color:var(--ok)}
 
 /* ---------- session ---------- */
+.lnk{border:0;background:none;padding:0;color:var(--accent);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
 .sess{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:11px 13px;margin-bottom:16px}
 .sess .hd{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between;margin-bottom:8px}
 .sess .hd b{font-size:.88rem}
@@ -306,7 +307,7 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
                  gist.githubusercontent.com et raw.githubusercontent.com.
                  Laisser vide désactive simplement le bouton.
    ======================================================================= */
-const APP_VERSION = 8;
+const APP_VERSION = 9;
 const UPDATE_URL  = 'https://raw.githubusercontent.com/Zexonis/Opticaide/main/index.html';
 
 /* Au démarrage : si une version plus récente a déjà été téléchargée et mise
@@ -1092,13 +1093,14 @@ function viewDrill(){
     <span class="pill"><b class="num">${seen?Math.round(100*first/seen):0}%</b> du 1er coup</span></div>`;
   const act = DRILLS.filter(d=>state.active.has(d.id));
   const pct = sessPct();
-  const sessBar = state.sessionOn ? `<section class="sess">
+  const sessBar = `<section class="sess">
       <div class="hd"><b>Concepts maîtrisés</b><span>${pct} % · ${SESSION_GOAL} réussites par équation</span></div>
       <div class="sbar"><i style="width:${pct}%;background:${sessColor(pct)}"></i></div>
-      <div class="sdots">${act.map(d=>{ const n=Math.min(state.session[d.id]||0,SESSION_GOAL);
-        return `<span class="sdot ${n>=SESSION_GOAL?'done':''}">${esc(d.nom)}<em>${n}/${SESSION_GOAL}</em></span>`; }).join('')}
-        <button class="chip" id="sessReset" style="font-size:.7rem;padding:3px 9px">Nouvelle session</button></div>
-    </section>` : '';
+      ${state.sessionOn ? `<div class="sdots">${act.map(d=>{ const n=Math.min(state.session[d.id]||0,SESSION_GOAL);
+          return `<span class="sdot ${n>=SESSION_GOAL?'done':''}">${esc(d.nom)}<em>${n}/${SESSION_GOAL}</em></span>`; }).join('')}
+          <button class="chip" id="sessReset" style="font-size:.7rem;padding:3px 9px">Nouvelle session</button></div>`
+        : `<p class="small muted" style="margin:8px 0 0">Active <button class="lnk" id="sessBtn2">mode Session</button> pour retirer du tirage chaque équation réussie ${SESSION_GOAL} fois, et suivre le détail par équation.</p>`}
+    </section>`;
   if(state.sessionOn && !sessPool().length && act.length) return `${bar}${chips}${sessBar}
     <div class="empty"><b style="color:var(--ok);font-size:1.05rem">Session terminée</b><br>
       Tu as réussi ${SESSION_GOAL} exercices de chaque équation sélectionnée.<br>
@@ -1300,7 +1302,7 @@ document.addEventListener('click', e=>{
   if(t.closest('#figToggle')){ state.reveal.fig=!state.reveal.fig; render(); return; }
   if(t.closest('#againBtn')){ newQuestion(state.q.drill.id); render();
     const f=document.querySelector('.field input'); f&&f.focus(); return; }
-  if(t.closest('#sessBtn')){ state.sessionOn=!state.sessionOn; store.set('sessionOn',state.sessionOn);
+  if(t.closest('#sessBtn')||t.closest('#sessBtn2')){ state.sessionOn=!state.sessionOn; store.set('sessionOn',state.sessionOn);
     if(state.sessionOn && state.q && sessDone(state.q.drill.id)) newQuestion();
     render(); return; }
   if(t.closest('#sessReset')){
