@@ -307,7 +307,7 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
                  gist.githubusercontent.com et raw.githubusercontent.com.
                  Laisser vide désactive simplement le bouton.
    ======================================================================= */
-const APP_VERSION = 9;
+const APP_VERSION = 10;
 const UPDATE_URL  = 'https://raw.githubusercontent.com/Zexonis/Opticaide/main/index.html';
 
 /* Au démarrage : si une version plus récente a déjà été téléchargée et mise
@@ -539,9 +539,74 @@ function sceneIndex(o){
   return svgWrap(s);
 }
 
+/* --- Module 4 : lentilles ------------------------------------------------ */
+function lensPath(cx, ax, half, conv){
+  const B = 17;
+  if(conv) return `M ${P(cx,ax-half)} Q ${P(cx+B,ax)} ${P(cx,ax+half)} Q ${P(cx-B,ax)} ${P(cx,ax-half)} Z`;
+  const e = 13;
+  return `M ${P(cx-e,ax-half)} L ${P(cx+e,ax-half)} Q ${P(cx-3,ax)} ${P(cx+e,ax+half)} `
+       + `L ${P(cx-e,ax+half)} Q ${P(cx+3,ax)} ${P(cx-e,ax-half)} Z`;
+}
+function sceneLens(o){
+  /* o : {conv, fLabel, hideF, dLabel, hideD}
+     La distance focale est DESSINÉE à longueur fixe : f va de 13 cm à 5 m selon
+     les questions, aucune échelle commune n'est lisible. La figure dit le signe
+     et le sens, pas la longueur — et elle le dit. */
+  /* La lentille divergente place son foyer virtuel À GAUCHE : si on garde la
+     même abscisse, l'étiquette « F′ (virtuel) » sort du cadre. On décale la
+     lentille vers la droite dans ce cas-là. */
+  const ax = 146, cx = o.conv ? 168 : 236, half = 54, fpx = 152;
+  const fx = o.conv ? cx + fpx : cx - fpx;
+  let s = '';
+  s += line(18, ax, 422, ax, {stroke:'var(--ghost)', w:1.4, dash:'6 6'});
+  s += `<path d="${lensPath(cx, ax, half, o.conv)}" fill="var(--glass)" opacity=".22" stroke="var(--glass)" stroke-width="2" stroke-linejoin="round"/>`;
+  [-36, 0, 36].forEach(dy => {
+    const y = ax + dy;
+    s += ray(26, y, cx, y);
+    if(o.conv){
+      s += ray(cx, y, fx, ax);
+      s += line(fx, ax, fx + 58, ax + dy * -0.42, {stroke:'var(--ray)', w:2, op:.55});
+    } else {
+      const t = (412 - cx) / (cx - fx);
+      s += ray(cx, y, 412, y + t * dy);
+      if(dy !== 0) s += line(cx, y, fx, ax, {stroke:'var(--ghost)', w:1.4, dash:'5 5'});
+    }
+  });
+  s += `<circle cx="${r2(fx,1)}" cy="${ax}" r="4.5" fill="var(--ray)"/>`;
+  s += txt(fx, ax - 14, o.conv ? "F′" : "F′ (virtuel)", 'lab-ray');
+  s += dimArrow(cx, ax + 84, fx, ax + 84, o.hideF ? Q : o.fLabel);
+  s += txt(cx, ax - half - 16, 'f′', 'lab-mut');
+  if(o.dLabel != null) s += txt(220, 30, 'F = ' + (o.hideD ? Q : o.dLabel), 'lab-ray');
+  s += txt(220, 288, 'figure schématique — la longueur focale n’est pas à l’échelle', 'lab-gh');
+  return svgWrap(s);
+}
+function sceneSurface(o){
+  /* o : {ni, nr, rPos, rLabel, hideR, dLabel, hideD} */
+  const ax = 150, vx = 196, Rpx = 122;
+  const cxC = o.rPos ? vx + Rpx : vx - Rpx;
+  const dY = 62, dA = asin(dY / Rpx);
+  const a0 = o.rPos ? 180 - dA : -dA, a1 = o.rPos ? 180 + dA : dA;
+  const xTop = cxC + Rpx * cos(a0), yTop = ax + Rpx * sin(a0);
+  const xBot = cxC + Rpx * cos(a1), yBot = ax + Rpx * sin(a1);
+  let s = '';
+  s += `<path d="${arcPath(cxC, ax, Rpx, a0, a1)} L ${P(422,yBot)} L ${P(422,yTop)} Z" fill="var(--glass)" opacity=".16"/>`;
+  s += line(18, ax, 422, ax, {stroke:'var(--ghost)', w:1.4, dash:'6 6'});
+  s += `<path d="${arcPath(cxC, ax, Rpx, a0, a1)}" stroke="var(--glass)" stroke-width="2.4" fill="none"/>`;
+  s += ray(26, ax - 40, vx - (o.rPos ? 0 : 0), ax - 40);
+  s += line(vx, ax, cxC, ax, {stroke:'var(--muted)', w:1.4, dash:'5 5'});
+  s += `<circle cx="${r2(cxC,1)}" cy="${ax}" r="4" fill="var(--muted)"/>`;
+  s += txt(cxC, ax - 12, 'C', 'lab-mut');
+  s += dimArrow(vx, ax + 78, cxC, ax + 78, o.hideR ? Q : o.rLabel);
+  s += txt((vx + cxC) / 2, ax + 100, 'rayon de courbure r', 'lab-gh');
+  s += txt(40, ax - 62, 'ni = ' + fmt(o.ni, 3), 'lab-mut', 'start');
+  s += txt(404, ax - 62, 'nr = ' + fmt(o.nr, 3), 'lab-mut', 'end');
+  if(o.dLabel != null) s += txt(220, 28, 'D = ' + (o.hideD ? Q : o.dLabel), 'lab-ray');
+  return svgWrap(s);
+}
+
 /* ===================== Drills ===================== */
 const DRILLS = [
-{ id:'reflect', mod:1, nom:'Loi de la réflexion', eq:'θi = θr', hint:"Les angles se mesurent toujours depuis la NORMALE, jamais depuis la surface.",
+{ id:'reflect', mod:1, nom:'Loi de la réflexion', eq:'θi = θr', reponseVisible:true, hint:"Les angles se mesurent toujours depuis la NORMALE, jamais depuis la surface.",
   gen(){
     const v = pick(['direct','surface','total']);
     const ti = ri(15,65);
@@ -660,7 +725,7 @@ const DRILLS = [
         [`sin i' = ${fmt(b.n*sin(i2)/c.n,5)}  →  i' = ${fmt(i3)}°`,'res']]};
   }},
 
-{ id:'plate', mod:2, nom:'Lame à faces parallèles', eq:"sortie = entrée  (déplacé, non dévié)",
+{ id:'plate', mod:2, nom:'Lame à faces parallèles', eq:"sortie = entrée  (déplacé, non dévié)", reponseVisible:true,
   hint:"Les deux surfaces sont parallèles : la 2e réfraction annule exactement la 1re. Le rayon ressort parallèle, seulement décalé.",
   gen(){
     const m=pick(MATS), i1=ri(20,55), i2=asin(sin(i1)/m.n);
@@ -674,6 +739,118 @@ const DRILLS = [
         [`${fmt(m.n,3)} × sin ${fmt(i2)}° = 1 × sin i''  →  i'' = ${fmt(i1)}°`,'res'],
         ['Le rayon ressort au MÊME angle : il est déplacé latéralement, mais pas dévié.','key'],
         ["Le décalage dépend de l'épaisseur de la lame."]]};
+  }},
+
+{ id:'focale', mod:4, nom:'Puissance focale  F = n/f′', eq:"F = n / f′   (n = 1 dans l'air)",
+  hint:"f′ doit être EN MÈTRES avant la division : 20 cm = 0.20 m, 2 mm = 0.002 m. Une dioptrie = une focale d'un mètre. Lentille convergente → F positif ; divergente → F négatif.",
+  gen(){
+    const v = pick(['f2F','f2F','F2f','F2fcm']);
+    if(v === 'f2F'){
+      const u = pick([{n:'cm',k:100},{n:'cm',k:100},{n:'m',k:1},{n:'mm',k:1000}]);
+      const sgn = Math.random() < 0.5 ? 1 : -1;
+      let val;
+      if(u.n === 'cm') val = pick([8, 12.5, 16, 20, 25, 40, 50, 80, 200, 500]);
+      else if(u.n === 'm') val = pick([0.5, 0.8, 1.25, 1.7, 2, 2.5, 4]);   // pas 1 m : F vaudrait 1 D, la réponse serait lisible dans l'énoncé
+      else val = pick([2, 4, 5, 8, 10, 20, 25]);
+      val = r2(val * sgn, 3);
+      const fM = val / u.k, F = 1 / fM;
+      return {prompt:`Calculer la puissance focale d'une lentille dont la longueur focale est de <b>${fmt(val,3)} ${u.n}</b>.`,
+        scene:sceneLens({conv:F>0, fLabel:fmt(val,3)+' '+u.n, dLabel:'?', hideD:true}),
+        givens:[`f′ = ${fmt(val,3)} ${u.n}`, 'n = 1 (air)'],
+        fields:[{key:'F',label:'F',unit:'D',val:F,tol:Math.max(0.02, Math.abs(F)*0.01)}],
+        steps:[['F = n / f′, avec n = 1 dans l\'air','key'],
+               u.n==='m' ? ['f′ est déjà en mètres'] : [`convertir : ${fmt(val,3)} ${u.n} = ${fmt(fM,4)} m`,'key'],
+               [`F = 1 / ${fmt(fM,4)}`],
+               [`F = ${fmt(F,2)} D`,'res'],
+               [F>0 ? '(positive → lentille convergente)' : '(négative → lentille divergente)']]};
+    }
+    if(v === 'F2f'){
+      const F = r2(pick([0.75, 1.5, 2, 2.5, 3, 4, 5, 6.25, 7.75, 10]) * (Math.random()<0.5?1:-1), 2);
+      const fM = 1 / F;
+      return {prompt:`Calculer la longueur focale, <b>en mètres</b>, d'une lentille de <b>${fmt(F,2)} D</b>.`,
+        scene:sceneLens({conv:F>0, fLabel:'?', hideF:true, dLabel:fmt(F,2)+' D'}),
+        givens:[`F = ${fmt(F,2)} D`, 'n = 1 (air)'],
+        fields:[{key:'f',label:'f′',unit:'m',val:fM,tol:Math.max(0.005, Math.abs(fM)*0.01)}],
+        steps:[['F = 1 / f′  →  f′ = 1 / F','key'],
+               [`f′ = 1 / ${fmt(F,2)}`],
+               [`f′ = ${fmt(fM,3)} m`,'res']]};
+    }
+    const F = r2(pick([1.25, 2, 2.5, 4, 5, 8, 12.5, 20]) * (Math.random()<0.5?1:-1), 2);
+    const fM = 1 / F, fCm = fM * 100;
+    return {prompt:`Calculer la longueur focale, <b>en centimètres</b>, d'une lentille de <b>${fmt(F,2)} D</b>.`,
+      scene:sceneLens({conv:F>0, fLabel:'?', hideF:true, dLabel:fmt(F,2)+' D'}),
+      givens:[`F = ${fmt(F,2)} D`, 'n = 1 (air)'],
+      fields:[{key:'f',label:'f′',unit:'cm',val:fCm,tol:Math.max(0.3, Math.abs(fCm)*0.01)}],
+      steps:[['F = 1 / f′  →  f′ = 1 / F','key'],
+             [`f′ = 1 / ${fmt(F,2)} = ${fmt(fM,4)} m`],
+             ['la réponse est demandée en cm : × 100','key'],
+             [`f′ = ${fmt(fCm,2)} cm`,'res']]};
+  }},
+
+{ id:'surfPow', mod:4, nom:'Puissance d’une surface', eq:'D = (nr − ni) / r',
+  hint:"r doit être EN MÈTRES. ni est le milieu d'où vient la lumière (1 dans l'air, 1.333 sous l'eau), nr celui de la lentille. Immerger la lentille réduit le contraste d'indice, donc la puissance.",
+  gen(){
+    const v = pick(['air','air','eau','rayon']);
+    const mat = pick(MATS);
+    const nr = mat.n;
+    const u = pick([{n:'cm',k:100},{n:'cm',k:100},{n:'m',k:1}]);
+    let val = u.n==='cm' ? pick([6.5, 8.66, 10, 12.5, 15, 20, 25]) : pick([0.12, 0.25, 0.4, 0.75, 1.5]);
+    const sgn = Math.random() < 0.62 ? 1 : -1;
+    val = r2(val * sgn, 3);
+    const rM = val / u.k;
+    if(v === 'rayon'){
+      const D = r2((nr - 1) / rM, 2);
+      const rRet = (nr - 1) / D;
+      return {prompt:`La surface avant d'une lentille d'indice <b>${fmt(nr,3)}</b> a une puissance de <b>${fmt(D,2)} D</b> dans l'air. Quel est son rayon de courbure, <b>en mètres</b> ?`,
+        scene:sceneSurface({ni:1, nr, rPos:rRet>0, rLabel:'?', hideR:true, dLabel:fmt(D,2)+' D'}),
+        givens:[`nr = ${fmt(nr,3)}`, 'ni = 1 (air)', `D = ${fmt(D,2)} D`],
+        fields:[{key:'r',label:'r',unit:'m',val:rRet,tol:Math.max(0.004, Math.abs(rRet)*0.02)}],
+        steps:[['D = (nr − ni) / r  →  r = (nr − ni) / D','key'],
+               [`r = (${fmt(nr,3)} − 1) / ${fmt(D,2)}`],
+               [`r = ${fmt(nr-1,3)} / ${fmt(D,2)}`],
+               [`r = ${fmt(rRet,4)} m`,'res']]};
+    }
+    const ni = v==='eau' ? 1.333 : 1;
+    const D = (nr - ni) / rM;
+    const dAir = (nr - 1) / rM;
+    return {prompt:`Calculer la puissance de la surface avant d'une lentille d'indice de réfraction <b>${fmt(nr,3)}</b> et de rayon de courbure <b>${fmt(val,3)} ${u.n}</b>`
+        + (v==='eau' ? `, cette fois <b>sous l'eau</b> (n = 1.333) au lieu de l'air.` : `.`),
+      scene:sceneSurface({ni, nr, rPos:rM>0, rLabel:fmt(val,3)+' '+u.n, dLabel:'?', hideD:true}),
+      givens:[`nr = ${fmt(nr,3)}`, `ni = ${fmt(ni,3)}` + (v==='eau'?' (eau)':' (air)'), `r = ${fmt(val,3)} ${u.n}`],
+      fields:[{key:'D',label:'D',unit:'D',val:D,tol:Math.max(0.02, Math.abs(D)*0.01)}],
+      steps:[['D = (nr − ni) / r','key'],
+             u.n==='m' ? ['r est déjà en mètres'] : [`convertir : ${fmt(val,3)} cm = ${fmt(rM,4)} m`,'key'],
+             [`D = (${fmt(nr,3)} − ${fmt(ni,3)}) / ${fmt(rM,4)}`],
+             [`D = ${fmt(nr-ni,3)} / ${fmt(rM,4)}`],
+             [`D = ${fmt(D,2)} D`,'res'],
+             ...(v==='eau' ? [[`(dans l'air la même surface ferait ${fmt(dAir,2)} D : l'eau réduit le contraste d'indice)`]] : [])]};
+  }},
+
+{ id:'lentille2', mod:4, nom:'Lentille à deux surfaces', eq:'F = F1 + F2',
+  hint:"Une lentille a deux surfaces réfringentes : leurs puissances s'additionnent. Un ménisque a une surface avant convexe (+) et une surface arrière concave (−).",
+  gen(){
+    const F1 = r2(rnd(2, 12), 2);
+    const F2 = r2(-rnd(1, 10), 2);
+    const F = r2(F1 + F2, 2);
+    if(Math.random() < 0.45){
+      return {prompt:`Une lentille ménisque a une puissance totale de <b>${fmt(F,2)} D</b>. Sa surface avant vaut <b>${fmt(F1,2)} D</b>. Quelle est la puissance de sa surface arrière ?`,
+        scene:sceneLens({conv:F>0, fLabel:'?', hideF:true, dLabel:fmt(F,2)+' D'}),
+        givens:[`F = ${fmt(F,2)} D`, `F1 (avant) = ${fmt(F1,2)} D`],
+        fields:[{key:'F2',label:'F2',unit:'D',val:F2,tol:0.02}],
+        steps:[['F = F1 + F2  →  F2 = F − F1','key'],
+               [`F2 = ${fmt(F,2)} − ${fmt(F1,2)}`],
+               [`F2 = ${fmt(F2,2)} D`,'res'],
+               ['(négative : la surface arrière d\'un ménisque est concave)']]};
+    }
+    return {prompt:`Une lentille a une surface avant de <b>${fmt(F1,2)} D</b> et une surface arrière de <b>${fmt(F2,2)} D</b>. Quelle est sa puissance totale ?`,
+      scene:sceneLens({conv:F>0, fLabel:'?', hideF:true, dLabel:'?', hideD:true}),
+      givens:[`F1 (avant) = ${fmt(F1,2)} D`, `F2 (arrière) = ${fmt(F2,2)} D`],
+      fields:[{key:'F',label:'F',unit:'D',val:F,tol:0.02}],
+      steps:[['La somme des deux surfaces donne la puissance de la lentille','key'],
+             ['F = F1 + F2'],
+             [`F = ${fmt(F1,2)} + (${fmt(F2,2)})`],
+             [`F = ${fmt(F,2)} D`,'res'],
+             [F>0 ? '(positive → convergente)' : '(négative → divergente)']]};
   }},
 
 { id:'prismSnell', mod:3, nom:'Prisme — méthode Snell', eq:"n sin(i) = n' sin(i')   avec   i = a   →   d = i' − a",
@@ -827,13 +1004,21 @@ const REF = [
  {mod:3, nom:'Relation trigonométrique exacte', eq:'tan(d) = Δ / 100      ⟹      Δ = 100 × tan(d)',
   syms:[['d','angle de déviation, en degrés'],['Δ','puissance en dioptries de prisme'],['100','conversion mètre → centimètre']],
   warn:"À 5° l'approximation et l'exact coïncident ; à 15° l'écart est de 2 % ; à 30° il atteint 9 %."},
- {mod:4, nom:'Module 4 — Formation des images', eq:'aucune équation nouvelle annoncée au tableau chronologique',
-  syms:[["Qu'est-ce qu'une image ?",'notion à définir'],["Image virtuelle","à distinguer de l'image réelle"],
-    ["Formation des images dans l'œil","le trajet jusqu'à la rétine"],
-    ['Activité',"élaboration de diagrammes montrant l'influence d'une lentille anatomique sur les rayons"],
-    ['Lecture',"Yelle, Éléments d'optique géométrique et ophtalmiques, p. 1–7"],
-    ['NACOR',"2.1.1 voies visuelles · 2.1.2 système oculaire · 2.1.3 anatomie de l'œil · 2.2.2 optique géométrique"]],
-  warn:"Module du 29 septembre — pas encore donné. Le tableau ne liste AUCUNE formule pour ce module : il est conceptuel et graphique. Aucun exercice n'est donc généré ici pour l'instant ; dépose le diaporama après le cours et il sera ajouté s'il contient des calculs. ⚠ L'évaluation du module 5 demande « les différentes amétropies », alors que le tableau les enseigne au module 7 (UA2) : à vérifier avec le professeur."}
+ {mod:4, nom:'Puissance focale — la dioptrie', eq:'F = n / f′        (n = 1 dans l’air, donc F = 1 / f′)',
+  syms:[['F','puissance focale, en dioptries (D)'],['n',"indice du milieu final — celui d'où le rayon émerge ; l'air dans presque tous les cas, donc 1"],["f′",'longueur focale secondaire, EN MÈTRES'],['1 D',"une lentille dont la focale vaut exactement 1 m"]],
+  warn:"La conversion est le seul vrai piège : 20 cm = 0.20 m, 2 mm = 0.002 m (donc −500 D). Le signe suit la lentille : convergente → F positif, divergente → F négatif."},
+ {mod:4, nom:'Puissance d’une surface', eq:'D = (nr − ni) / r        (dans l’air : D = (n − 1) / r)',
+  syms:[['D','puissance de la surface, en dioptries'],['nr',"indice du matériau réfracté — celui de la lentille"],['ni',"indice du milieu incident — 1 dans l'air, 1.333 sous l'eau"],['r','rayon de courbure de la surface, EN MÈTRES']],
+  warn:"Deux choses font la puissance d'une lentille : sa courbure et son indice. Plus le rayon est petit, plus la courbure est forte. Immerger la lentille réduit l'écart d'indice, donc la puissance — c'est pourquoi on voit flou sous l'eau."},
+ {mod:4, nom:'Lentille à deux surfaces', eq:'F = F1 + F2',
+  syms:[['F1','puissance de la surface avant'],['F2','puissance de la surface arrière'],['ménisque',"la forme la plus courante : avant convexe (+), arrière concave (−)"]],
+  warn:"Une lentille a deux surfaces réfringentes, chacune avec son propre rayon de courbure ; leurs puissances s'additionnent."},
+ {mod:4, nom:'Conventions de signes', eq:'droite + · gauche − · haut + · bas − · convergente + · divergente −',
+  syms:[['sens',"les rayons sont dessinés voyageant de gauche à droite"],['origine','toutes les mesures partent de la lentille, au centre du système'],['horizontal','à droite positif, à gauche négatif'],['vertical','au-dessus de l’axe positif, en dessous négatif']],
+  warn:"Ces conventions valent pour tout le reste du cours ; une erreur de signe ici se propage à toutes les réponses suivantes."},
+ {mod:4, nom:'Vocabulaire de la lentille', eq:'axe optique · centre optique · foyer objet / foyer image · plan focal',
+  syms:[['axe optique','le centre de symétrie de la lentille'],['centre optique',"le point où le rayon n'est pas dévié — au centre, sur l'axe"],['foyer image (F′)',"où convergent des rayons arrivés parallèles"],['foyer objet','le point dont les rayons ressortent parallèles'],['formes','biconvexe · biconcave · ménisque']],
+  warn:"⚠ L'évaluation du module 5 demande « les différentes amétropies », alors que le tableau les enseigne au module 7 (UA2) : à vérifier avec le professeur."}
 ];
 
 /* ===================== State ===================== */
@@ -910,6 +1095,30 @@ function bump(id, firstTry, tries){
 }
 
 /* ===================== Question flow ===================== */
+/* Un tirage dont la réponse est déjà lisible dans l'énoncé se devine sans rien
+   comprendre. Ce n'est pas un bug de formule : c'est une coïncidence de
+   valeurs (un rayon qui rend D égal à l'indice affiché, par exemple). On
+   redemande un tirage — douze fois au plus, après quoi on garde le dernier :
+   mieux vaut une question devinable qu'une boucle sans fin. */
+const NOMBRES = s => (String(s).match(/-?\d+(?:[.,]\d+)?/g) || []).map(x => +x.replace(',', '.'));
+function fuiteReponse(q){
+  if(!q || !q.fields) return false;
+  const montres = NOMBRES(q.prompt).concat(
+    (q.givens || []).filter(g => !/= 1(\.0+)? \(air\)/.test(g)).flatMap(NOMBRES));
+  return q.fields.some(f => {
+    if(!Number.isFinite(f.val) || Math.abs(f.val) < 0.05) return false;
+    const rep = r2(f.val, 2), seuil = Math.max((f.tol || 0) * 0.5, Math.abs(rep) * 0.002);
+    return montres.some(x => Math.abs(x - rep) <= seuil);
+  });
+}
+function tirerSansFuite(drill){
+  /* Certains exercices ONT pour leçon que la réponse égale une donnée
+     (θr = θi ; sortie = entrée). Les en priver serait supprimer la leçon. */
+  if(drill.reponseVisible) return drill.gen();
+  let q = drill.gen();
+  for(let i = 0; i < 12 && fuiteReponse(q); i++) q = drill.gen();
+  return q;
+}
 function newQuestion(forceId){
   let pool = forceId ? DRILLS.filter(d=>d.id===forceId) : sessPool();
   if(!pool.length){ state.q=null; return; }
@@ -919,7 +1128,7 @@ function newQuestion(forceId){
     const w = 1 + Math.round(3*(1-acc)) + (s.seen===0?2:0);
     for(let i=0;i<w;i++) weighted.push(d); });
   const drill = pick(weighted);
-  const q = drill.gen();
+  const q = tirerSansFuite(drill);
   state.q = {...q, drill, qid:'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)};
   state.attempts=0; state.solved=false; state.revealed=false;
   state.work={text:'', strokes:[]}; state.drawing=false;
