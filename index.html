@@ -118,6 +118,10 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn.ghost{background:transparent}
+.btn svg{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.btn.done{color:var(--ok);border-color:var(--ok)}
+#copyBtn{margin-left:auto}
+@media(max-width:560px){ #copyBtn{margin-left:0;width:100%} }
 .verdict{border-radius:10px;padding:10px 13px;font-weight:600;font-size:.92rem;display:flex;gap:9px;align-items:flex-start}
 .verdict.ok{background:color-mix(in srgb,var(--ok) 14%,var(--surface));color:var(--ok)}
 .verdict.bad{background:color-mix(in srgb,var(--bad) 12%,var(--surface));color:var(--bad)}
@@ -315,7 +319,7 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
                  gist.githubusercontent.com et raw.githubusercontent.com.
                  Laisser vide désactive simplement le bouton.
    ======================================================================= */
-const APP_VERSION = 11;
+const APP_VERSION = 12;
 const UPDATE_URL  = 'https://raw.githubusercontent.com/Zexonis/Opticaide/main/index.html';
 
 /* Au démarrage : si une version plus récente a déjà été téléchargée et mise
@@ -334,7 +338,7 @@ const UPDATE_URL  = 'https://raw.githubusercontent.com/Zexonis/Opticaide/main/in
 })();
 
 /* =======================================================================
-   Opticaide — entraînement aux équations d'optique (SCI 23546, modules 1–3)
+   Opticaide — entraînement aux équations d'optique (SCI 23546, modules 1–4)
    Toutes les figures sont construites mathématiquement en SVG à partir des
    valeurs du problème : aucune image importée.
    ======================================================================= */
@@ -1295,6 +1299,61 @@ async function checkUpdate(){
   }
 }
 
+/* ===================== Copier pour une IA =====================
+   Le contexte vient AVANT l'énoncé : sans « Techniques d'opticien », un
+   assistant explique la réfraction en physique générale, avec des conventions
+   de signes qui ne sont pas celles du cours.
+
+   La réponse attendue part toujours, même quand l'exercice est encore en
+   cours : travailler le problème avec un assistant fait gagner du temps, du
+   moment qu'on apprend en chemin. C'est la consigne finale qui protège
+   l'apprentissage — elle interdit explicitement de recracher le résultat et
+   demande de faire remonter le raisonnement. */
+function promptIA(){
+  const q = state.q; if(!q) return '';
+  const nu = x => String(x).replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+  const brouillon = (state.work.text || '').trim();
+  const out = [
+    "Je suis étudiant en Techniques d'opticien (La Cité collégiale) et je fais un exercice d'optique géométrique. Explique-moi clairement et en détail comment le résoudre, étape par étape : je veux comprendre la méthode, pas seulement obtenir le résultat.",
+    '',
+    `COURS : Optique (SCI 23546) — Module ${q.drill.mod} — ${nu(q.drill.nom)}`,
+    `ÉQUATION : ${nu(q.drill.eq)}`,
+    `ÉNONCÉ : ${nu(q.prompt)}`];
+  if(q.givens && q.givens.length)
+    out.push('DONNÉES :', ...q.givens.map(g => '  • ' + nu(g)));
+  out.push('À TROUVER : ' + q.fields.map(f =>
+    nu(f.label) + (f.unit ? ` (en ${nu(f.unit)})` : '')).join(', '));
+  if(brouillon) out.push('', 'MA DÉMARCHE JUSQU’ICI :', brouillon);
+  out.push('', 'RÉPONSE ATTENDUE : ' + q.fields.map(f =>
+    `${nu(f.label)} = ${f.unit === 'km/s' ? fmtInt(f.val) : fmt(f.val, 3)} ${nu(f.unit)}`.trim()).join('  ·  '));
+  const enCours = !(state.solved || state.revealed);
+  out.push('', "Dans ta réponse : explique d'abord pourquoi cette équation s'applique et ce que chaque symbole représente, puis détaille chaque étape en gardant les unités visibles."
+    + (enCours
+        ? " J'ai déjà la réponse attendue ci-dessus, mais pas le raisonnement : ne te contente donc pas de me la redonner. Reprends le chemin qui y mène, une étape à la fois, et pose-moi une question quand c'est à moi de trouver la suite."
+        : " Termine en vérifiant que ta démarche retombe bien sur la réponse attendue.")
+    + (brouillon ? " Dis-moi aussi où ma démarche se trompe, s'il y a lieu." : ''));
+  return out.join('\n');
+}
+/* Le fichier est souvent ouvert en file:// depuis un téléphone : hors contexte
+   sécurisé, navigator.clipboard n'existe tout simplement pas. On retombe alors
+   sur execCommand, qui exige un élément réellement sélectionné dans la page. */
+async function copier(txt){
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(txt); return true; }
+  }catch(e){}
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, txt.length);
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  }catch(e){ return false; }
+}
+
 /* ===================== Views ===================== */
 const ICON = {
   eye:'<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
@@ -1304,6 +1363,7 @@ const ICON = {
   book:'<svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h12"/></svg>',
   ok:'<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
   bad:'<svg viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>',
+  copy:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
   idea:'<svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.3 11c.5.4.8.9.8 1.5V16h5v-.5c0-.6.3-1.1.8-1.5A6 6 0 0 0 12 3z"/></svg>'
 };
 function viewDrill(){
@@ -1365,12 +1425,14 @@ function viewDrill(){
   const sol = (state.solved||state.revealed) ? `<div class="sol"><h4>Démarche</h4>${
       q.steps.map(([t,c])=>`<div class="step ${c||''}">${t}</div>`).join('')}</div>` : '';
   const failed = state.revealed || state.attempts>1;
+  const copyBtn = `<button class="btn ghost" id="copyBtn"
+    title="Copie le contexte, l'équation, l'énoncé et les données, prêts à coller dans un assistant IA">${ICON.copy}Copier pour une IA</button>`;
   const actions = state.solved || state.revealed
     ? `<div class="row"><button class="btn primary" id="nextBtn">Question suivante →</button>
-       ${failed?`<button class="btn" id="againBtn">Refaire ce type d'exercice</button>`:''}</div>`
+       ${failed?`<button class="btn" id="againBtn">Refaire ce type d'exercice</button>`:''}${copyBtn}</div>`
     : `<div class="row"><button class="btn primary" id="checkBtn">Vérifier</button>
        <button class="btn ghost" id="revealBtn">Voir la solution</button>
-       <button class="btn ghost" id="skipBtn">Passer</button></div>`;
+       <button class="btn ghost" id="skipBtn">Passer</button>${copyBtn}</div>`;
   return `${bar}${chips}${sessBar}
   <section class="card drill fade">
     <div class="pane-vis">
@@ -1429,7 +1491,7 @@ function viewDrill(){
 function viewRef(){
   return `<div class="ref">${REF.map(r=>`<section class="card refcard">
     <h3><span class="mod">Module ${r.mod}</span>${r.nom}${
-      r.exam?'<span class="mod examtag" title="Annonc\u00e9e \u00e0 l\u0027examen">&#9733; examen</span>':''}</h3>
+      r.exam?'<span class="mod examtag" title="Annoncée à l’examen">&#9733; examen</span>':''}</h3>
     <div class="eq">${r.eq}</div>
     <dl class="syms">${r.syms.map(([s,d])=>`<dt>${s}</dt><dd>${d}</dd>`).join('')}</dl>
     ${r.warn?`<div class="warn">${r.warn}</div>`:''}
@@ -1566,6 +1628,26 @@ document.addEventListener('click', e=>{
   if(t.closest('#clearHist')){
     if(confirm('Vider le cahier ? Les brouillons et dessins conservés seront effacés.')){
       state.history=[]; state.openHist=null; saveHistory(); render(); } return; }
+  if(t.closest('#copyBtn')){
+    /* En mode découverte l'équation est encore voilée : on ne peut pas la
+       copier et continuer à prétendre qu'on l'a devinée. On la dévoile donc,
+       exactement comme « Passer la devinette », pour que l'écran et le cahier
+       disent la vérité. */
+    const devoile = state.cloakOn && !state.reveal.eq && !(state.solved||state.revealed);
+    if(devoile){ state.reveal.eq=true; state.eqQuiz=false; state.eqSkipped=true; }
+    const txt = promptIA();
+    if(devoile) render();
+    copier(txt).then(ok=>{
+      const b = document.getElementById('copyBtn'); if(!b) return;
+      b.innerHTML = (ok?ICON.ok:ICON.bad) + (ok ? 'Copié\u00a0!' : 'Copie refusée');
+      b.classList.toggle('done', ok);
+      clearTimeout(window.__copieT);
+      window.__copieT = setTimeout(()=>{
+        const c = document.getElementById('copyBtn');
+        if(c){ c.innerHTML = ICON.copy + 'Copier pour une IA'; c.classList.remove('done'); }
+      }, 2400);
+    });
+    return; }
   if(t.closest('#checkBtn')){ checkAnswer(); return; }
   if(t.closest('#revealBtn')){ reveal(); return; }
   if(t.closest('#skipBtn')){ state.streak=0; newQuestion(); render(); return; }
