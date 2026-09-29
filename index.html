@@ -131,6 +131,12 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
 
 .chip.modpick{border-radius:10px;padding:7px 12px;font-size:.84rem}
 .chip.modpick b{font-weight:700;font-variant-numeric:tabular-nums;opacity:.65;margin-left:3px}
+.chip.modpick.exam{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 42%,var(--line))}
+.chip.modpick.exam[aria-pressed="true"]{color:var(--gold);border-color:var(--gold);
+  background:color-mix(in srgb,var(--gold) 16%,transparent)}
+.exambar{margin:-8px 0 16px;padding:9px 12px;border-radius:8px;font-size:.82rem;line-height:1.55;
+  color:var(--muted);background:color-mix(in srgb,var(--gold) 11%,transparent);border-left:3px solid var(--gold)}
+.exambar b{color:var(--gold);margin-right:6px}
 .picker{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:16px;overflow:hidden}
 .picker>summary{list-style:none;cursor:pointer;padding:9px 13px;font-size:.84rem;font-weight:600;color:var(--muted);
   display:flex;gap:8px;align-items:center}
@@ -250,6 +256,8 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
 .ref{display:grid;gap:14px}
 .refcard{padding:16px}
 .refcard h3{font-size:1rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
+.examtag{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 45%,transparent);
+  background:color-mix(in srgb,var(--gold) 12%,transparent)}
 .mod{font-size:.68rem;font-weight:700;letter-spacing:.05em;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line-2)}
 .eq{font-family:"IBM Plex Mono",monospace;font-size:1.06rem;background:var(--surface-2);border-radius:10px;
   padding:12px 14px;margin:10px 0;text-align:center;border-left:3px solid var(--ray);overflow-x:auto}
@@ -307,7 +315,7 @@ main{padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px))}
                  gist.githubusercontent.com et raw.githubusercontent.com.
                  Laisser vide désactive simplement le bouton.
    ======================================================================= */
-const APP_VERSION = 10;
+const APP_VERSION = 11;
 const UPDATE_URL  = 'https://raw.githubusercontent.com/Zexonis/Opticaide/main/index.html';
 
 /* Au démarrage : si une version plus récente a déjà été téléchargée et mise
@@ -969,15 +977,36 @@ const DRILLS = [
 ];
 const DRILL_BY_ID = Object.fromEntries(DRILLS.map(d=>[d.id,d]));
 
+/* ===================== Mode examen =====================
+   Liste que le professeur a annoncee comme etant celle de l'examen (Optique
+   SCI23546). On la garde exactement telle qu'il l'a donnee, dans son ordre,
+   et on n'y ajoute rien de « logiquement voisin » : c'est son perimetre, pas
+   le notre.
+     n = c / v .......................... index
+     n1 sin(theta_i) = n2 sin(theta_r) .. snell
+     d = (n - 1) a ...................... thin
+     D = deplacement (cm) / dist. (m) ... delta
+     1 deg = 1.75D  ·  1D = 0.57 deg .... conv
+     F = 1/f'  (= n/f' dans l'air) ...... focale
+     D = (nr - ni)/r  (= (n-1)/r) ....... surfPow
+   Restent donc HORS du mode examen, faute d'avoir ete annoncees : reflect
+   (theta_i = theta_r), chain (Snell deux fois), plate (lame a faces
+   paralleles), prismSnell, exact (D = 100 tan d), lentille2 (F = F1 + F2).
+   Elles restent accessibles par module ou une a une dans le selecteur. */
+const EXAMEN = ['index','snell','thin','delta','conv','focale','surfPow']
+  .filter(id => { if(DRILL_BY_ID[id]) return true;
+    console.warn('EXAMEN : exercice inconnu «'+id+'» — renomme ou supprime'); return false; });
+const surExamen = id => EXAMEN.includes(id);
+
 /* ===================== Reference sheet ===================== */
 const REF = [
  {mod:1, nom:'Loi de la réflexion', eq:'θi = θr',
   syms:[['θi',"angle d'incidence, mesuré depuis la normale"],['θr','angle de réflexion, mesuré depuis la normale']],
   warn:"Piège classique : si l'énoncé donne l'angle avec la SURFACE, soustrais-le de 90° avant d'appliquer la loi."},
- {mod:2, nom:'Indice de réfraction', eq:'n = c / v',
+ {mod:2, exam:true, nom:'Indice de réfraction', eq:'n = c / v',
   syms:[['n','indice de réfraction absolu du matériau (sans unité, ≥ 1)'],['c','vitesse de la lumière dans le vide = 300 000 km/s = 3.00 × 10⁸ m/s'],['v','vitesse de la lumière dans le milieu']],
   warn:"n = 1.523 veut dire que la lumière voyage 1.523 fois plus lentement dans ce verre. Verre minéral 1.523 · organique (CR-39) 1.498."},
- {mod:2, nom:'Loi de Snell-Descartes', eq:"n sin(i) = n' sin(i')      ⟺      n₁ sin(θ₁) = n₂ sin(θ₂)",
+ {mod:2, exam:true, nom:'Loi de Snell-Descartes', eq:"n sin(i) = n' sin(i')      ⟺      n₁ sin(θ₁) = n₂ sin(θ₂)",
   syms:[['n  (n₁)',"indice du milieu d'incidence — celui d'où vient le rayon"],['i  (θ₁)',"angle d'incidence, depuis la normale"],["n' (n₂)",'indice du milieu de réfraction — celui où le rayon entre'],["i' (θ₂)",'angle de réfraction, depuis la normale']],
   warn:"Le prime (′) signifie toujours « après la surface ». Vers un milieu plus dense → le rayon se rapproche de la normale ; vers un milieu moins dense → il s'en écarte."},
  {mod:2, nom:'Les 4 lois de Descartes', eq:'propagation rectiligne · coplanarité · θi = θr · loi des sinus',
@@ -992,22 +1021,22 @@ const REF = [
  {mod:3, nom:'Prisme — déviation par Snell', eq:"n sin(i) = n' sin(i')   avec   i = a       puis       d = i' − a",
   syms:[['i',"angle d'incidence à la face de sortie — il ÉGALE l'angle apical a"],['a','angle apical (angle du sommet) du prisme'],["i'",'angle de réfraction à la surface de sortie'],['d','déviation totale, en degrés']],
   warn:"Ce n'est pas une nouvelle formule : c'est n sin(i) = n' sin(i') où i a été remplacé par a. Pourquoi i = a ? Le rayon entre ⊥ à la 1re face, donc il n'y est pas dévié ; la normale de la 2e face est ⊥ à celle-ci ; comme les deux faces forment l'angle a, le rayon et cette normale forment aussi l'angle a (côtés perpendiculaires)."},
- {mod:3, nom:'Prisme mince — méthode simplifiée', eq:'d = (n − 1) a',
+ {mod:3, exam:true, nom:'Prisme mince — méthode simplifiée', eq:'d = (n − 1) a',
   syms:[['d','déviation, en degrés'],['n','indice de réfraction du prisme'],['a','angle apical, en degrés'],['(n − 1)',"le contraste optique avec l'air (n_air = 1)"]],
   warn:"Seulement si a < 15°, ce qui couvre les lentilles ophtalmiques. L'approximation vient de sin θ ≈ θ. Si a = 0 (faces parallèles) alors d = 0 : une lame à faces planes déplace mais ne dévie pas."},
- {mod:3, nom:'Dioptrie de prisme (Δ)', eq:'Δ = déplacement (cm) / distance (m)',
+ {mod:3, exam:true, nom:'Dioptrie de prisme (Δ)', eq:'Δ = déplacement (cm) / distance (m)',
   syms:[['Δ','puissance du prisme en dioptries de prisme'],['déplacement','décalage latéral du rayon, en centimètres'],['distance',"distance du prisme à l'écran, en mètres"]],
   warn:"1Δ = 1 cm de déplacement à 1 m. Ne pas confondre avec la dioptrie de lentille (D = 1/f) — même mot, définition différente."},
- {mod:3, nom:'Conversions ° ↔ Δ', eq:'Δ = d(°) × 1.75      ·      d(°) = Δ × 0.57',
+ {mod:3, exam:true, nom:'Conversions ° ↔ Δ', eq:'Δ = d(°) × 1.75      ·      d(°) = Δ × 0.57',
   syms:[['1° de déviation','= 1.75Δ'],['1Δ','= 0.57° de déviation']],
   warn:"Approximation valable pour les petits angles (< 15°). Les deux facteurs sont réciproques : 1 ÷ 1.75 = 0.571."},
  {mod:3, nom:'Relation trigonométrique exacte', eq:'tan(d) = Δ / 100      ⟹      Δ = 100 × tan(d)',
   syms:[['d','angle de déviation, en degrés'],['Δ','puissance en dioptries de prisme'],['100','conversion mètre → centimètre']],
   warn:"À 5° l'approximation et l'exact coïncident ; à 15° l'écart est de 2 % ; à 30° il atteint 9 %."},
- {mod:4, nom:'Puissance focale — la dioptrie', eq:'F = n / f′        (n = 1 dans l’air, donc F = 1 / f′)',
+ {mod:4, exam:true, nom:'Puissance focale — la dioptrie', eq:'F = n / f′        (n = 1 dans l’air, donc F = 1 / f′)',
   syms:[['F','puissance focale, en dioptries (D)'],['n',"indice du milieu final — celui d'où le rayon émerge ; l'air dans presque tous les cas, donc 1"],["f′",'longueur focale secondaire, EN MÈTRES'],['1 D',"une lentille dont la focale vaut exactement 1 m"]],
   warn:"La conversion est le seul vrai piège : 20 cm = 0.20 m, 2 mm = 0.002 m (donc −500 D). Le signe suit la lentille : convergente → F positif, divergente → F négatif."},
- {mod:4, nom:'Puissance d’une surface', eq:'D = (nr − ni) / r        (dans l’air : D = (n − 1) / r)',
+ {mod:4, exam:true, nom:'Puissance d’une surface', eq:'D = (nr − ni) / r        (dans l’air : D = (n − 1) / r)',
   syms:[['D','puissance de la surface, en dioptries'],['nr',"indice du matériau réfracté — celui de la lentille"],['ni',"indice du milieu incident — 1 dans l'air, 1.333 sous l'eau"],['r','rayon de courbure de la surface, EN MÈTRES']],
   warn:"Deux choses font la puissance d'une lentille : sa courbure et son indice. Plus le rayon est petit, plus la courbure est forte. Immerger la lentille réduit l'écart d'indice, donc la puissance — c'est pourquoi on voit flou sous l'eau."},
  {mod:4, nom:'Lentille à deux surfaces', eq:'F = F1 + F2',
@@ -1282,14 +1311,21 @@ function viewDrill(){
   const inMod = m => DRILLS.filter(d=>d.mod===m).map(d=>d.id);
   const exactly = ids => ids.length===state.active.size && ids.every(i=>state.active.has(i));
   const chip = d => `<button class="chip" data-toggle="${d.id}" aria-pressed="${state.active.has(d.id)}"><i></i>${d.nom}</button>`;
+  const examOn = exactly(EXAMEN);
   const modbar = `<div class="chips">
+    <button class="chip modpick exam" data-mod="exam" aria-pressed="${examOn}"
+      title="Seulement les ${EXAMEN.length} equations annoncees a l'examen">&#9733; Examen<b>${EXAMEN.length}</b></button>
     <button class="chip modpick" data-mod="all" aria-pressed="${state.active.size===DRILLS.length}">Tous les modules<b>${DRILLS.length}</b></button>
     ${MODS.map(m=>`<button class="chip modpick" data-mod="${m}" aria-pressed="${exactly(inMod(m))}">Module ${m}<b>${inMod(m).length}</b></button>`).join('')}
     <button class="chip modpick" id="cloakBtn" aria-pressed="${state.cloakOn}"
       title="Masque la formule, les valeurs et la figure : à toi de trouver quelle équation utiliser">Mode découverte</button>
     <button class="chip modpick" id="sessBtn" aria-pressed="${state.sessionOn}"
       title="Chaque équation quitte le tirage après ${SESSION_GOAL} réussites">Session</button></div>`;
-  const chips = modbar + `<details class="picker" ${state.pickOpen?'open':''} id="picker">
+  const examNote = examOn ? `<div class="exambar"><b>&#9733; Mode examen</b>
+    <span>Les ${EXAMEN.length} &eacute;quations annonc&eacute;es par le professeur, et rien d'autre.
+    Les autres restent accessibles par module ou une &agrave; une, juste en dessous.
+    Active <b style="color:inherit">Session</b> pour en r&eacute;ussir ${SESSION_GOAL} de chacune.</span></div>` : '';
+  const chips = modbar + examNote + `<details class="picker" ${state.pickOpen?'open':''} id="picker">
     <summary>Choisir équation par équation <em>${state.active.size} active${state.active.size>1?'s':''} sur ${DRILLS.length}</em></summary>
     <div class="pickbody">${MODS.map(m=>`<div class="modgroup"><span class="modlab">M${m}</span>
       <div class="chips">${DRILLS.filter(d=>d.mod===m).map(chip).join('')}</div></div>`).join('')}</div></details>`;
@@ -1392,7 +1428,8 @@ function viewDrill(){
 }
 function viewRef(){
   return `<div class="ref">${REF.map(r=>`<section class="card refcard">
-    <h3><span class="mod">Module ${r.mod}</span>${r.nom}</h3>
+    <h3><span class="mod">Module ${r.mod}</span>${r.nom}${
+      r.exam?'<span class="mod examtag" title="Annonc\u00e9e \u00e0 l\u0027examen">&#9733; examen</span>':''}</h3>
     <div class="eq">${r.eq}</div>
     <dl class="syms">${r.syms.map(([s,d])=>`<dt>${s}</dt><dd>${d}</dd>`).join('')}</dl>
     ${r.warn?`<div class="warn">${r.warn}</div>`:''}
@@ -1491,7 +1528,9 @@ document.addEventListener('click', e=>{
     render(); return; }
   const mp=t.closest('[data-mod]');
   if(mp){ const v=mp.dataset.mod;
-    state.active = new Set(v==='all' ? DRILLS.map(d=>d.id) : DRILLS.filter(d=>d.mod===+v).map(d=>d.id));
+    state.active = new Set(v==='all' ? DRILLS.map(d=>d.id)
+      : v==='exam' ? EXAMEN
+      : DRILLS.filter(d=>d.mod===+v).map(d=>d.id));
     store.set('active',[...state.active]);
     if(!state.q || !state.active.has(state.q.drill.id)) newQuestion();
     render(); return; }
